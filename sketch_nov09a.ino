@@ -1,19 +1,36 @@
+#define ONEWIRE
+
 #include <UKHASnetRFM69-config.h>
 #include <UKHASnetRFM69.h>
+#ifdef ONEWIRE
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#endif
 
-#include <string.h>
+char NODE_NAME[9] = "OSb0"; // null-terminated string, max 8 bytes, A-z0-9
+char HOPS = '9'; // '0'-'9'
+byte txpower = 20;
 
-char* NODE_NAME = "OSb0";
-char HOPS = '9';
 const byte PAYLOADSIZE = 64;
-byte TXPOWER = 20;
 
-// Internal Temperature Sensor
-// Example sketch for ATmega328 types.
-//
-// April 2012, Arduino 1.0
+double vsense_offset = 0.74d; // Seems like it depends on current usage. Jumps to 0.76V
+double vsense_mult = 15.227d;
+
+
 // const uint32_t baudrate = 9600;
 // The code in this sketch assumes clock speed of 8MHz (eg. the internal oscilator)
+#ifdef ONEWIRE
+const int OWPIN = 9; // 1-wire bus connected on pin 9
+const int DSRES = 12; // 12-bit temperature resolution
+
+OneWire onewire(OWPIN);
+DallasTemperature dstemp(&onewire);
+DeviceAddress dsaddr;
+#endif
+
+
+
+/* ------------------------------------------------------------------------- */
 
 byte cpu_div = 8;
 
@@ -65,6 +82,23 @@ void CPU_1MHz() {
   UBRR0 = 0x000C; // 9600bps
 }
 
+void setCPUDIV(byte div) {
+    switch (div) {
+        case 1:
+            CPU_8MHz();
+            break;
+        case 2:
+            CPU_4MHz();
+            break;
+        case 4:
+            CPU_2MHz();
+            break;
+        case 8:
+            CPU_1MHz();
+            break;
+    }
+}
+
 void sleep(unsigned long d) {
     delay(d / cpu_div);
 }
@@ -74,6 +108,7 @@ byte dataptr = 0;
 unsigned long packet_count = 0;
 byte sequence = 0;
 
+/* ------------------------------------------------------------------------- */
 
 void resetData() {
   dataptr = 0;
@@ -90,9 +125,29 @@ void addString(char *value) {
 }
 
 char _floatbuf[16];
-void addFloat(double value, byte precission = 2) { 
-  dtostrf(value, 1, precission, _floatbuf);
-  addString(_floatbuf);
+void addFloat(double value, byte precission = 2, bool strip=true) { 
+    dtostrf(value, 1, precission, _floatbuf);
+    
+    if (precission and strip) {
+        byte e;
+        for (byte i=0;i<16;i++) {
+            if (!_floatbuf[i]) {
+                e = i-1;
+                break;
+            }
+        }
+        for (byte i=e; i; i--) {
+            if (_floatbuf[i] == '0') {
+                _floatbuf[i] = 0;
+            } else if (_floatbuf[i] == '.') {
+                _floatbuf[i] = 0;
+                break;
+            } else {
+                break;
+            }
+        }
+    }
+    addString(_floatbuf);
 }
 
 void addCharArray(char *value, byte len) {
@@ -120,60 +175,108 @@ void addByte(byte value) { // byte, char, unsigned char
   databuf[dataptr++] = value;
 }
 
-
+/* ------------------------------------------------------------------------- */
 
 void setup() {
-  CPU_8MHz();
-#ifdef HAVE_HWSERIAL0
-  Serial.begin(9600);
-  Serial.println(F("\nInternal Temperature Sensor"));
-  Serial.flush();
+    CPU_8MHz();
   
-#endif
-  while(rf69_init() != RFM_OK) {
-    delay(100);
-  }
 #ifdef HAVE_HWSERIAL0
-  Serial.println(F("Radio started."));
-  Serial.flush();
-  
-//  UBRR0 = 0x0033;
-  CPU_1MHz();
-  Serial.println(F("Serial test at 1MHz clock speed."));
-  Serial.flush();
-  CPU_2MHz();
-  Serial.println(F("Serial test at 2MHz clock speed."));
-  Serial.flush();
-  CPU_4MHz();
-  Serial.println(F("Serial test at 4MHz clock speed."));
-  Serial.flush();
-  CPU_8MHz();
-  Serial.println(F("Serial test at 8MHz clock speed."));
-  Serial.flush();
+    Serial.begin(9600);
+    Serial.print(F("\nUKHASnet: Oddstr13's atmega328 battery node "));
+    Serial.println(NODE_NAME);
+    Serial.flush();
 #endif
-  CPU_1MHz();
+
+#ifdef ONEWIRE
+#ifdef HAVE_HWSERIAL0
+    Serial.println(F("Scanning 1-wire bus..."));
+#endif
+    dstemp.begin();
+    dstemp.setResolution(12);
+#ifdef HAVE_HWSERIAL0
+    Serial.print(F("1-wire devices: "));
+    Serial.print(dstemp.getDeviceCount(), DEC);
+    Serial.println();
+    Serial.print(F("1-wire parasite: ")); 
+    Serial.println(dstemp.isParasitePowerMode());
+    Serial.flush();
+#endif
+    if (!dstemp.getAddress(dsaddr, 0)) {
+#ifdef HAVE_HWSERIAL0
+        Serial.println("WARNING: 1-wire: Unable to find temperature device");
+        Serial.flush();
+#endif
+    }
+    
+#endif
+
+    while(rf69_init() != RFM_OK) {
+        delay(100);
+    }
+#ifdef HAVE_HWSERIAL0
+    Serial.println(F("Radio started."));
+    Serial.flush();
+
+    //  UBRR0 = 0x0033;
+    CPU_1MHz();
+    Serial.println(F("Serial test at 1MHz clock speed."));
+    Serial.flush();
+    CPU_2MHz();
+    Serial.println(F("Serial test at 2MHz clock speed."));
+    Serial.flush();
+    CPU_4MHz();
+    Serial.println(F("Serial test at 4MHz clock speed."));
+    Serial.flush();
+    CPU_8MHz();
+    Serial.println(F("Serial test at 8MHz clock speed."));
+    Serial.flush();
+#endif
+    CPU_1MHz();
 }
 
+double voltage = 0;
+
 void loop() {
-    resetData();
+    voltage = getVCCVoltage();
     
+    
+    if (voltage < 2.5) {
+        txpower = 10;
+    } else {
+        txpower = 20;
+    }
+    
+    resetData();
     
     addByte(HOPS);
     addByte(sequence+97);
     
-    addByte('T');
-    addFloat(getChipTemp());
-    
     addByte('V');
-    addFloat(getVCCVoltage());
+    addFloat(voltage);
     addByte(',');
     addFloat(getBatteryVoltage());
+    
+    addByte('T');
+    addFloat(getChipTemp());
+#ifdef ONEWIRE
+    if (voltage > 2.75) {
+        double temp = getDSTemp();
+        if (temp != 85) {
+            addByte(',');
+            addFloat(getDSTemp(), 3);
+        }
+    }
+#endif
+    
     
     switch (sequence) {
         case 1: // Location
             break;
         case 2: // Mode
             addString("Z1");
+            break;
+        case 3: // Comment
+            addString(":no lp sleep");
             break;
     }
     
@@ -191,7 +294,8 @@ void loop() {
         sequence++;
     }
 
-  sleep(1000);
+//  sleep(1000);
+    sleep(60000);
 }
 
 void send() {
@@ -206,10 +310,10 @@ void send() {
 }
 
 void send_rfm69() {
-    rf69_send(databuf, dataptr, TXPOWER);
+    rf69_send(databuf, dataptr, txpower);
 }
 
-
+/* ------------------------------------------------------------------------- */
 
 double getChipTemp() {
   uint16_t wADC;
@@ -278,5 +382,20 @@ double getBatteryVoltage() {
   // wADC / 1024 * 1.1 * (VBAT/ADC0V) == VBAT
   //return wADC ? wADC / 1024.0d * 1.1d: -1;
   //return wADC ? wADC / 1024.0d * 1.1d * (12.76/0.818555): -1;
-  return wADC ? wADC / 1024.0d * 17.15d : -1;
+  return wADC ? (((wADC / 1024.0d) * 1.1d) * vsense_mult) + vsense_offset : -1;
 }
+
+#ifdef ONEWIRE
+double getDSTemp() {
+    byte old_div = cpu_div;
+    CPU_8MHz();
+    
+    dstemp.requestTemperatures();
+    
+    double temp = dstemp.getTempC(dsaddr);
+    
+    setCPUDIV(old_div);
+    
+    return temp;
+}
+#endif

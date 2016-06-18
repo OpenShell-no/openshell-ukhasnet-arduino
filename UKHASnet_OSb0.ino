@@ -342,15 +342,9 @@ void handleUKHASNETPacket() {
     has_repeated = false;
     for (uint8_t i=0; i<dataptr; i++) {
         if (databuf[i] == '[' || databuf[i] == ',' || databuf[i] == ']') {
-            Serial.println("path_start");
-            Serial.println(path_start);
-            Serial.println(i - path_start);
             if (path_start && (i - path_start == NODE_NAME_LEN) && !has_repeated) {
                 has_repeated = true;
                 for (uint8_t j=0; j<NODE_NAME_LEN; j++) {
-                    Serial.write(databuf[path_start+j]);
-                    Serial.write(NODE_NAME[j]);
-                    Serial.println();
                     if (databuf[path_start+j] != NODE_NAME[j]) {
                         has_repeated = false;
                     }
@@ -359,12 +353,9 @@ void handleUKHASNETPacket() {
             path_start = i + 1;
         }
         if (databuf[i] == ']') {
-            Serial.println("path_end");
             path_end = i;
         }
     }
-    Serial.println(NODE_NAME);
-    Serial.println(NODE_NAME_LEN);
     if (!has_repeated and --databuf[0] >= '0') {
         dataptr = path_end;
         addByte(',');

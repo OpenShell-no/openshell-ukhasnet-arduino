@@ -1,15 +1,24 @@
-#define ONEWIRE
+//#define ONEWIRE
+//#define RFM69
+#define SERIALDEBUG
 
+//#ifdef ESP8266    // ESP8266 based platform
+//#ifdef AVR        // AVR based platform
+
+#ifdef RFM69
 #include <UKHASnetRFM69-config.h>
 #include <UKHASnetRFM69.h>
+byte rfm_txpower = 20;
+#endif
 #ifdef ONEWIRE
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #endif
 
 char NODE_NAME[9] = "OSb0"; // null-terminated string, max 8 bytes, A-z0-9
+uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
 char HOPS = '9'; // '0'-'9'
-byte txpower = 20;
+
 
 const byte PAYLOADSIZE = 64;
 
@@ -35,6 +44,7 @@ DeviceAddress dsaddr;
 byte cpu_div = 8;
 
 void CPU_8MHz() {
+    /*
   cli();
   CLKPR = 0b10000000;
   CLKPR = 0b00000000; // Clock divider: 1
@@ -44,9 +54,11 @@ void CPU_8MHz() {
   // USART0 - http://wormfood.net/avrbaudcalc.php?postbitrate=9600&postclock=1&u2xmode=1
   UCSR0A = UCSR0A | 0b00000010; // Enable double speed
   UBRR0 = 0x0067; // 9600bps
+  */
 }
 
 void CPU_4MHz() {
+    /*
   cli();
   CLKPR = 0b10000000;
   CLKPR = 0b00000001; // Clock divider: 2
@@ -56,9 +68,11 @@ void CPU_4MHz() {
   // USART0
   UCSR0A = UCSR0A | 0b00000010; // Enable double speed
   UBRR0 = 0x0033; // 9600bps
+  */
 }
 
 void CPU_2MHz() {
+    /*
   cli();
   CLKPR = 0b10000000;
   CLKPR = 0b00000010; // Clock divider: 4
@@ -68,9 +82,11 @@ void CPU_2MHz() {
   // USART0
   UCSR0A = UCSR0A | 0b00000010; // Enable double speed
   UBRR0 = 0x0019; // 9600bps
+  */
 }
 
 void CPU_1MHz() {
+    /*
   cli();
   CLKPR = 0b10000000;
   CLKPR = 0b00000011; // Clock divider: 8
@@ -80,6 +96,7 @@ void CPU_1MHz() {
   // USART0
   UCSR0A = UCSR0A | 0b00000010; // Enable double speed
   UBRR0 = 0x000C; // 9600bps
+  */
 }
 
 void setCPUDIV(byte div) {
@@ -109,6 +126,7 @@ unsigned long packet_count = 0;
 byte sequence = 0;
 
 /* ------------------------------------------------------------------------- */
+// TODO: make all functions respect PAYLOADSIZE.
 
 void resetData() {
   dataptr = 0;
@@ -210,13 +228,21 @@ void setup() {
     
 #endif
 
+#ifdef RFM69
     while(rf69_init() != RFM_OK) {
         delay(100);
     }
+    
+    rf69_set_mode(RFM69_MODE_RX);
+    //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
+    
 #ifdef HAVE_HWSERIAL0
     Serial.println(F("Radio started."));
     Serial.flush();
+#endif
+#endif
 
+#ifdef HAVE_HWSERIAL0
     //  UBRR0 = 0x0033;
     CPU_1MHz();
     Serial.println(F("Serial test at 1MHz clock speed."));
@@ -232,27 +258,32 @@ void setup() {
     Serial.flush();
 #endif
     CPU_1MHz();
+    
 }
 
 double voltage = 0;
 
-void loop() {
+double readVCC() {
     voltage = getVCCVoltage();
     
-    
+#ifdef RFM69
     if (voltage < 2.5) {
-        txpower = 10;
+        rfm_txpower = 10;
     } else {
-        txpower = 20;
+        rfm_txpower = 20;
     }
-    
+#endif
+    return voltage;
+}
+
+void sendOwn() {
     resetData();
     
     addByte(HOPS);
     addByte(sequence+97);
     
     addByte('V');
-    addFloat(voltage);
+    addFloat(readVCC());
     addByte(',');
     addFloat(getBatteryVoltage());
     
@@ -293,9 +324,115 @@ void loop() {
     if (!sequence) { // 'a' should only be sendt on boot.
         sequence++;
     }
+}
 
+uint8_t path_start, path_end;
+bool has_repeated;
+
+//rfm_status_t rf69_receive(rfm_reg_t* buf, rfm_reg_t* len, int16_t* lastrssi,
+//        bool* rfm_packet_waiting);
+
+bool packet_received;
+int16_t lastrssi;
+
+void handleUKHASNETPacket() {
+    Serial.println("handleUKHASNETPacket");
+    path_start = 0;
+    path_end = 0;
+    has_repeated = false;
+    for (uint8_t i=0; i<dataptr; i++) {
+        if (databuf[i] == '[' || databuf[i] == ',' || databuf[i] == ']') {
+            Serial.println("path_start");
+            Serial.println(path_start);
+            Serial.println(i - path_start);
+            if (path_start && (i - path_start == NODE_NAME_LEN) && !has_repeated) {
+                has_repeated = true;
+                for (uint8_t j=0; j<NODE_NAME_LEN; j++) {
+                    Serial.write(databuf[path_start+j]);
+                    Serial.write(NODE_NAME[j]);
+                    Serial.println();
+                    if (databuf[path_start+j] != NODE_NAME[j]) {
+                        has_repeated = false;
+                    }
+                }
+            }
+            path_start = i + 1;
+        }
+        if (databuf[i] == ']') {
+            Serial.println("path_end");
+            path_end = i;
+        }
+    }
+    Serial.println(NODE_NAME);
+    Serial.println(NODE_NAME_LEN);
+    if (!has_repeated and --databuf[0] >= '0') {
+        dataptr = path_end;
+        addByte(',');
+        addCharArray(NODE_NAME, NODE_NAME_LEN);
+        addByte(']');
+        send();
+    }
+}
+
+void handlePacket() {
+    Serial.print("handlePacket ");
+    Serial.write(databuf[0]);
+    Serial.write(databuf[1]);
+    //Serial.write(databuf[dataptr]);
+    Serial.println();
+    if (databuf[0] >= '0' and
+        databuf[0] <= '9' and
+        databuf[1] >= 'a' and
+        databuf[1] <= 'z') {
+        handleUKHASNETPacket();
+    }
+}
+
+void handleRX() {
+#ifdef RFM69
+    rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
+    if (packet_received) {
+        //rf69.recv(databuf, &dataptr);
+        handlePacket();
+    }
+#endif
+#ifdef SERIALDEBUG
+    if (Serial.available()) {
+        dataptr = Serial.readBytesUntil('+n', databuf, PAYLOADSIZE);
+        handlePacket();
+    }
+#endif
+}
+
+/* ------------------------------------------------------------------------- */
+const unsigned long MAXULONG = 0xffffffff;
+
+unsigned long now;
+unsigned long getTimeSince(unsigned long ___start) {
+    unsigned long interval;
+    now = millis();
+    if (___start > now) {
+        interval = MAXULONG - ___start + now;
+    } else {
+        interval = now - ___start;
+    }
+    return interval;
+}
+/* ------------------------------------------------------------------------- */
+
+unsigned long timer_sendown = 0; //millis();
+
+void loop() {
+    handleRX();
+    
+    if (getTimeSince(timer_sendown) >= 15000) {
+        timer_sendown = millis();
+        sendOwn();
+    }
+    
+    
 //  sleep(1000);
-    sleep(60000);
+//    sleep(60000);
 }
 
 void send() {
@@ -306,12 +443,16 @@ void send() {
     Serial.write("\r\n");
     Serial.flush();
 #endif
+#ifdef RFM69
     send_rfm69();
+#endif
 }
 
+#ifdef RFM69
 void send_rfm69() {
-    rf69_send(databuf, dataptr, txpower);
+    rf69_send(databuf, dataptr, rfm_txpower);
 }
+#endif
 
 /* ------------------------------------------------------------------------- */
 
@@ -325,7 +466,7 @@ double getChipTemp() {
 #elif defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined (__AVR_ATtiny84__)
   ADMUX = 0b10100010; // REFS1 = 1; REFS0 = 0; MUX5:0 = 0b100010
                       // Reference = 1.1V, Measure ADC8 (Temperature)
-#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__)
+#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__)  || defined (__AVR_ATmega328PB__) 
   ADMUX = 0b11001000; // REFS1 = 1; REFS0 = 1; MUX3:0 = 0b1000
                       // Reference = 1.1V, Measure ADC8 (Temperature)
 #else
@@ -352,7 +493,7 @@ double getVCCVoltage() {
 #elif defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined (__AVR_ATtiny84__)
   ADMUX = 0b00100001; // REFS1 = 0; REFS0 = 0; MUX5:0 = 0b100001
                       // Reference = VCC, Measure 1.1V(VBG) bandgap
-#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__)
+#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega328PB__)
   ADMUX = 0b01001110; // REFS1 = 0; REFS0 = 1; MUX3:0 = 0b1110
                       // Reference = AVCC, Measure 1.1V(VBG) bandgap
 #else

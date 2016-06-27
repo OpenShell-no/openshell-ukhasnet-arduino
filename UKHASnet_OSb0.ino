@@ -25,6 +25,9 @@ uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
 char HOPS = '9'; // '0'-'9'
 uint16_t BROADCAST_INTERVAL = 15;
 
+float LATITUDE  = NAN;
+float LONGITUDE = NAN;
+
 const byte BUFFERSIZE = 128;
 const byte PAYLOADSIZE = 64;
 
@@ -44,6 +47,12 @@ DeviceAddress dsaddr;
 #endif
 
 
+typedef enum packet_source_t { SOURCE_UNKNOWN, SOURCE_SELF, SOURCE_SERIAL, SOURCE_WIFI, SOURCE_LAN, SOURCE_RFM, SOURCE_NRF24 } packet_source_t;
+packet_source_t packet_source;
+
+
+typedef enum gps_lock_t { GPS_LOCK_UNKNOWN, GPS_LOCK_NO, GPS_LOCK_2D, GPS_LOCK_3D } gps_lock_t;
+gps_lock_t gps_lock = GPS_LOCK_UNKNOWN;
 
 /* ------------------------------------------------------------------------- */
 
@@ -125,6 +134,9 @@ void setCPUDIV(byte div) {
 void sleep(unsigned long d) {
     delay(d / cpu_div);
 }
+
+unsigned long timer_lastgps = 0;
+
 
 byte databuf[BUFFERSIZE];
 byte dataptr = 0;
@@ -394,10 +406,10 @@ bool has_repeated;
 //        bool* rfm_packet_waiting);
 
 
-typedef enum packet_source_t { SOURCE_UNKNOWN, SOURCE_SELF, SOURCE_SERIAL, SOURCE_WIFI, SOURCE_LAN, SOURCE_RFM, SOURCE_NRF24 } packet_source_t;
+// typedef enum packet_source_t { SOURCE_UNKNOWN, SOURCE_SELF, SOURCE_SERIAL, SOURCE_WIFI, SOURCE_LAN, SOURCE_RFM, SOURCE_NRF24 } packet_source_t;
 
 bool packet_received;
-packet_source_t packet_source;
+// packet_source_t packet_source;
 
 void handleUKHASNETPacket() {
     Serial.println("handleUKHASNETPacket");
@@ -460,20 +472,21 @@ bool s_cmp(char* a, char* b, uint8_t count) {
 
 bool s_cmp(char* a, char* b) {
     uint8_t i=0;
-    while (a[i] != NULL or b[i] != NULL) {
+    while (a[i] != '\0' and b[i] != '\0') {
         if (a[i] != b[i]) {
             return false;
         }
+        i++;
     }
     return true;
 }
 
 uint8_t s_sub(char* source, char* target, uint8_t start, uint8_t end) {
     uint8_t i;
-    for (i=start; i<end; i++) {
-        target[i] = source[i];
+    for (i=0; i<end-start; i++) {
+        target[i] = source[start+i];
     }
-    target[++i] = NULL;
+    target[++i] = '\0';
     return end - start;
 }
 
@@ -481,11 +494,106 @@ uint8_t s_sub(char* source, char* target, uint8_t end) {
     return s_sub(source, target, 0, end);
 }
 
+float parse_float(char* buf, uint8_t len) {
+    //Serial.println(buf);
+    
+    float _f_mult = 0.1;
+    bool _neg = buf[0] == '-';
+    
+    for (uint8_t i=0; i<len; i++) {
+        if (buf[i] == '.') {
+            break;
+        }
+        if (buf[i] >= '0' and buf[i] <= '9') {
+            _f_mult *= 10;
+        }
+    }
+    
+    float res = 0;
+    
+    for (uint8_t i=0; i<len; i++) {
+        if (buf[i] >= '0' and buf[i] <= '9') {
+            res += (buf[i] - 48) * _f_mult;
+            _f_mult /= 10;
+        }
+    }
+    
+    if (_neg) {
+        res *= -1;
+    }
+    
+    //Serial.println(res);
+    return res;
+}
+
+float parse_float(char* buf) {
+    return parse_float(buf, strlen(buf));
+}
+
 uint8_t _gpspos;
-uint8_t _gpsbuf[17];
+float _gpsfloat;
+char _gpsbuf[17];
+gps_lock_t _gps_oldstatus = GPS_LOCK_UNKNOWN;
+
 void handleGPSString() {
+    _gps_oldstatus = gps_lock;
     if (s_cmp((char*)databuf, "$GPGSA")) {
         _gpspos = c_find(',', 2);
+        s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
+        //Serial.println(_gpsbuf);
+        switch (_gpsbuf[0]) {
+            case '1':
+                gps_lock = GPS_LOCK_NO;
+                break;
+            case '2':
+                gps_lock = GPS_LOCK_2D;
+                break;
+            case '3':
+                gps_lock = GPS_LOCK_3D;
+                break;
+            default:
+                gps_lock = GPS_LOCK_UNKNOWN;
+        }
+    // $GPGGA,123710.00,6240.76823,N,01001.78175,E,1,06,1.16,613.9,M,40.5,M,,*52
+    } else if (s_cmp((char*)databuf, "$GPGGA")) {
+        _gpspos = c_find(',', 2);
+        LATITUDE = (databuf[_gpspos] - 48) * 10;
+        LATITUDE += databuf[_gpspos + 1] - 48;
+        s_sub((char*)databuf, _gpsbuf, _gpspos+2, c_find(_gpspos, ',')-1);
+        _gpsfloat = parse_float(_gpsbuf);
+        LATITUDE += _gpsfloat / 60; // TODO: Handle N/S
+        
+        _gpspos = c_find(',', 3);
+        s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
+        
+        if (_gpsbuf[0] == 'S') {
+            LATITUDE *= -1;
+        }
+        Serial.print("Latitude: ");
+        Serial.println(LATITUDE);
+        
+        
+        
+        _gpspos = c_find(',', 4);
+        LONGITUDE = parse_float((char*)&databuf[_gpspos], 3);
+        //LONGITUDE = (databuf[_gpspos + 1] - 48) * 10;
+        //LONGITUDE += databuf[_gpspos + 2] - 48;
+        s_sub((char*)databuf, _gpsbuf, _gpspos+3, c_find(_gpspos, ',')-1);
+        _gpsfloat = parse_float(_gpsbuf);
+        LONGITUDE += _gpsfloat / 60; // TODO: Handle N/S
+        
+        _gpspos = c_find(',', 5);
+        s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
+        
+        if (_gpsbuf[0] == 'W') {
+            LONGITUDE *= -1;
+        }
+        Serial.print("Longitude: ");
+        Serial.println(LONGITUDE);
+    }
+    
+    if (_gps_oldstatus != gps_lock) {
+        
     }
 }
 
@@ -500,7 +608,7 @@ void handlePacket() {
         databuf[1] >= 'a' and
         databuf[1] <= 'z') {
         handleUKHASNETPacket();
-    } else if (databuf[0] == '$' and databuf[1] == 'G' and databuf[2] == 'P') {
+    } else if (s_cmp((char*)databuf, "$GP")) {
         if (packet_source == SOURCE_SERIAL) {
             handleGPSString();
         }
@@ -518,7 +626,7 @@ void handleRX() {
 #endif
 #ifdef SERIALDEBUG
     if (Serial.available()) {
-        dataptr = Serial.readBytesUntil('+n', databuf, BUFFERSIZE);
+        dataptr = Serial.readBytesUntil('\n', databuf, BUFFERSIZE);
         packet_source = SOURCE_SERIAL;
         handlePacket();
     }
@@ -542,7 +650,6 @@ unsigned long getTimeSince(unsigned long ___start) {
 /* ------------------------------------------------------------------------- */
 
 unsigned long timer_sendown = 0; //millis();
-
 void loop() {
     handleRX();
     

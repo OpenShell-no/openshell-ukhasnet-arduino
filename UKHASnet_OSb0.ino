@@ -485,6 +485,7 @@ void handleUKHASNETPacket() {
         addByte(',');
         addCharArray(NODE_NAME, NODE_NAME_LEN);
         addByte(']');
+        delay(random(0, 600));
         send();
     }
 }

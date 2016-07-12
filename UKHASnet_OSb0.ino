@@ -10,7 +10,7 @@
 #include <UKHASnetRFM69.h>
 byte rfm_txpower = 20;
 float rfm_freq_trim = 0.068f;
-int16_t lastrssi;
+int16_t lastrssi = 0;
 #define RFMRESET_PORT PORTB
 #define RFMRESET_DDR DDRB
 #define RFMRESET_PIN _BV(1)
@@ -23,11 +23,57 @@ int16_t lastrssi;
 char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
 char HOPS = '9'; // '0'-'9'
-uint16_t BROADCAST_INTERVAL = 15;
+uint16_t BROADCAST_INTERVAL = 5;
 
 float LATITUDE  = NAN;
 float LONGITUDE = NAN;
 float ALTITUDE  = NAN;
+/* COMPILETIME SETTINGS
+HAS_UKHASNET
+HAS_RFM69
+HAS_NRF24
+HAS_ONEWIRE
+HAS_DHT22
+HAS_ADC
+HAS_VBATSENSE
+HAS_SERIAL
+HAS_GPS
+
+*/
+
+
+/* EEPROM SETTINGS
+ukhasnet_enabled        bool
+ukhasnet_interval       int
+
+onewire_enabled         bool
+onewire_pin             int
+
+dht22_enabled           bool
+dht22_pin               int
+
+rfm69_enabled           bool
+rfm69_chipselect        int
+rfm69_frequency         float
+rfm69_frequency_offset  float
+
+nrf24_enabled           bool
+nrf24_chipselect        int
+nrf24_channel           int
+
+vbatsense_enabled       bool
+vbatsense_pin           int
+vbatsense_multiplier    float
+vbatsense_offset        float
+
+photoresistor_enabled   bool
+photoresistor_pin       int
+
+gps_enabled             bool
+location_latitude       float
+location_longitude      float
+location_altitude       float
+*/
 
 const byte BUFFERSIZE = 128;
 const byte PAYLOADSIZE = 64;
@@ -186,6 +232,14 @@ void addFloat(double value, byte precission = 2, bool strip=true) {
             }
         }
     }
+    for (uint8_t i=0; i<16;i++) {
+        if (_floatbuf[i] == 0) {
+            break;
+        }
+        if (_floatbuf[i] >= 'A' and _floatbuf[i] <= 'Z') {
+            _floatbuf[i] += 32; // str.tolower()
+        }
+    }
     addString(_floatbuf);
 }
 
@@ -258,7 +312,6 @@ void rfm69_set_frequency(float freqMHz) {
 #endif
 
 void setup() {
-    CPU_8MHz();
   
 #ifdef HAVE_HWSERIAL0
     Serial.begin(9600);
@@ -313,22 +366,9 @@ void setup() {
 #endif
 #endif
 
-#ifdef HAVE_HWSERIAL0
-    //  UBRR0 = 0x0033;
-    CPU_1MHz();
-    Serial.println(F("Serial test at 1MHz clock speed."));
-    Serial.flush();
-    CPU_2MHz();
-    Serial.println(F("Serial test at 2MHz clock speed."));
-    Serial.flush();
-    CPU_4MHz();
-    Serial.println(F("Serial test at 4MHz clock speed."));
-    Serial.flush();
-    CPU_8MHz();
-    Serial.println(F("Serial test at 8MHz clock speed."));
-    Serial.flush();
+#ifdef RFM69
+    sendOwn();
 #endif
-    CPU_1MHz();
     
 }
 
@@ -380,9 +420,28 @@ void sendOwn() {
 
 
 #ifdef RFM69
-    addByte('R');
-    addFloat((lastrssi / 2.0f) * -1);
+    if (lastrssi != 0) {
+        addByte('R');
+        addFloat((float)lastrssi);
+    }
 #endif    
+    
+    switch (gps_lock) {
+        case GPS_LOCK_2D:
+            addByte('L');
+            addFloat(LATITUDE, 5);
+            addByte(',');
+            addFloat(LONGITUDE, 5);
+            break;
+        case GPS_LOCK_3D:
+            addByte('L');
+            addFloat(LATITUDE, 5);
+            addByte(',');
+            addFloat(LONGITUDE, 5);
+            addByte(',');
+            addFloat(ALTITUDE, 0);
+            break;
+    }
     
     switch (sequence) {
         case 1: // Location
@@ -402,10 +461,6 @@ void sendOwn() {
     
     send();
     bumpSequence();
-}
-
-void addLocation() {
-    
 }
 
 void sendPositionStatus() {
@@ -726,10 +781,6 @@ void loop() {
         timer_sendown = millis();
         sendOwn();
     }
-    
-    
-//  sleep(1000);
-//    sleep(60000);
 }
 
 void send() {
@@ -1055,14 +1106,9 @@ double getBatteryVoltage() {
 
 #ifdef ONEWIRE
 double getDSTemp() {
-    byte old_div = cpu_div;
-    CPU_8MHz();
-    
     dstemp.requestTemperatures();
     
     double temp = dstemp.getTempC(dsaddr);
-    
-    setCPUDIV(old_div);
     
     return temp;
 }

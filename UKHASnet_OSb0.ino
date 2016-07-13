@@ -1,7 +1,7 @@
-#define DEF_ONEWIRE
+//#define DEF_ONEWIRE
 #define DEF_RFM69
 #define SERIALDEBUG
-#define DEF_DHT
+//#define DEF_DHT
 
 //#ifdef ESP8266    // ESP8266 based platform
 //#ifdef AVR        // AVR based platform
@@ -13,9 +13,8 @@ const bool HAS_RFM69 = true;
 byte rfm_txpower = 20;
 float rfm_freq_trim = 0.068f;
 int16_t lastrssi = 0;
-#define RFMRESET_PORT PORTB
-#define RFMRESET_DDR DDRB
-#define RFMRESET_PIN _BV(1)
+int rfm69_reset_pin = 15;
+int rfm69_chipselect_pin = 0;
 #else
 const bool HAS_RFM69 = false;
 #endif
@@ -45,12 +44,13 @@ const bool HAS_CPUVCC = true;
 #elif defined(ESP8266)
 const bool HAS_CPUTEMP = false;
 const bool HAS_CPUVCC = false;
+#define HAVE_HWSERIAL0
 #endif
 
 char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
 char HOPS = '9'; // '0'-'9'
-uint16_t BROADCAST_INTERVAL = 5;
+uint16_t BROADCAST_INTERVAL = 120;
 
 float LATITUDE  = NAN;
 float LONGITUDE = NAN;
@@ -226,10 +226,12 @@ void addByte(byte value) { // byte, char, unsigned char
 
 #ifdef DEF_RFM69
 void rfm69_reset() {
-    RFMRESET_DDR  |= RFMRESET_PIN;
-    RFMRESET_PORT |= RFMRESET_PIN;
+    pinMode(rfm69_reset_pin, OUTPUT);
+    digitalWrite(rfm69_reset_pin, HIGH);
     delay(100);
-    RFMRESET_PORT &= ~(RFMRESET_PIN);
+    digitalWrite(rfm69_reset_pin, LOW);
+    
+    spi_set_chipselect(rfm69_chipselect_pin);
     
     while(rf69_init() != RFM_OK) {
         delay(100);
@@ -1051,21 +1053,7 @@ double getVCCVoltage() {
 #endif
 
 double getBatteryVoltage() {
-  uint16_t wADC;
-  
-  // Set the internal reference and mux.
-  ADMUX = 0b11000000; // REFS1 = 1; REFS0 = 1; MUX3:0 = 0b0000
-                      // Reference = 1.1V, Measure ADC0
-  ADCSRA |= _BV(ADEN);  // enable the ADC
-  delay(20);             // wait for voltages to become stable.
-  ADCSRA |= _BV(ADSC);  // Start the ADC
-  while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to finish.
-  wADC = ADCW;
-  // wADC / 1024 * 1.1 == ADC0 Voltage
-  // wADC / 1024 * 1.1 * (VBAT/ADC0V) == VBAT
-  //return wADC ? wADC / 1024.0d * 1.1d: -1;
-  //return wADC ? wADC / 1024.0d * 1.1d * (12.76/0.818555): -1;
-  return wADC ? (((wADC / 1024.0d) * 1.1d) * vsense_mult) + vsense_offset : -1;
+    return 0.0;
 }
 
 #ifdef DEF_ONEWIRE

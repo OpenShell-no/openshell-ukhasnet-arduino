@@ -1,11 +1,13 @@
-//#define ONEWIRE
-#define RFM69
+#define DEF_ONEWIRE
+#define DEF_RFM69
 #define SERIALDEBUG
+#define DEF_DHT
 
 //#ifdef ESP8266    // ESP8266 based platform
 //#ifdef AVR        // AVR based platform
 
-#ifdef RFM69
+#ifdef DEF_RFM69
+const bool HAS_RFM69 = true;
 #include <UKHASnetRFM69-config.h>
 #include <UKHASnetRFM69.h>
 byte rfm_txpower = 20;
@@ -14,10 +16,35 @@ int16_t lastrssi = 0;
 #define RFMRESET_PORT PORTB
 #define RFMRESET_DDR DDRB
 #define RFMRESET_PIN _BV(1)
+#else
+const bool HAS_RFM69 = false;
 #endif
-#ifdef ONEWIRE
+
+
+#ifdef DEF_ONEWIRE
+const bool HAS_ONEWIRE = true;
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#else
+const bool HAS_ONEWIRE = false;
+#endif
+
+#ifdef DEF_DHT
+const bool HAS_DHT = true;
+#include <DHT.h>
+//DHT dht;
+#else
+const bool HAS_DHT = false;
+#endif
+
+#if defined(AVR)
+#define DEF_CPUTEMP
+#define DEF_CPUVCC
+const bool HAS_CPUTEMP = true;
+const bool HAS_CPUVCC = true;
+#elif defined(ESP8266)
+const bool HAS_CPUTEMP = false;
+const bool HAS_CPUVCC = false;
 #endif
 
 char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
@@ -33,12 +60,14 @@ HAS_UKHASNET
 HAS_RFM69
 HAS_NRF24
 HAS_ONEWIRE
-HAS_DHT22
+HAS_DHT
 HAS_ADC
 HAS_VBATSENSE
 HAS_SERIAL
 HAS_GPS
-
+HAS_BMP085
+HAS_BME280
+HAS_CPUTEMP
 */
 
 
@@ -49,16 +78,18 @@ ukhasnet_interval       int
 onewire_enabled         bool
 onewire_pin             int
 
-dht22_enabled           bool
-dht22_pin               int
+dht_enabled             bool
+dht_pin                 int
 
 rfm69_enabled           bool
-rfm69_chipselect        int
+rfm69_chipselect_pin    int
+rfm69_reset_pin         int
+rfm69_interrupt_pin     int
 rfm69_frequency         float
 rfm69_frequency_offset  float
 
 nrf24_enabled           bool
-nrf24_chipselect        int
+nrf24_chipselect_pin    int
 nrf24_channel           int
 
 vbatsense_enabled       bool
@@ -73,6 +104,8 @@ gps_enabled             bool
 location_latitude       float
 location_longitude      float
 location_altitude       float
+
+cputemp_enabled         bool
 */
 
 const byte BUFFERSIZE = 128;
@@ -84,7 +117,7 @@ double vsense_mult = 15.227d;
 
 // const uint32_t baudrate = 9600;
 // The code in this sketch assumes clock speed of 8MHz (eg. the internal oscilator)
-#ifdef ONEWIRE
+#ifdef DEF_ONEWIRE
 const int OWPIN = 9; // 1-wire bus connected on pin 9
 const int DSRES = 12; // 12-bit temperature resolution
 
@@ -191,7 +224,7 @@ void addByte(byte value) { // byte, char, unsigned char
 
 /* ------------------------------------------------------------------------- */
 
-#ifdef RFM69
+#ifdef DEF_RFM69
 void rfm69_reset() {
     RFMRESET_DDR  |= RFMRESET_PIN;
     RFMRESET_PORT |= RFMRESET_PIN;
@@ -241,7 +274,7 @@ void setup() {
     Serial.flush();
 #endif
 
-#ifdef ONEWIRE
+#ifdef DEF_ONEWIRE
 #ifdef HAVE_HWSERIAL0
     Serial.println(F("Scanning 1-wire bus..."));
 #endif
@@ -264,7 +297,7 @@ void setup() {
     
 #endif
 
-#ifdef RFM69
+#ifdef DEF_RFM69
     rfm69_reset();
     
     for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
@@ -287,7 +320,7 @@ void setup() {
 #endif
 #endif
 
-#ifdef RFM69
+#ifdef DEF_RFM69
     sendOwn();
 #endif
     
@@ -296,9 +329,11 @@ void setup() {
 double voltage = 0;
 
 double readVCC() {
+#ifdef DEF_CPUVCC
     voltage = getVCCVoltage();
+#endif
     
-#ifdef RFM69
+#ifdef DEF_RFM69
     if (voltage < 2.5) {
         rfm_txpower = 10;
     } else {
@@ -327,9 +362,12 @@ void sendOwn() {
     //addByte(',');
     //addFloat(getBatteryVoltage());
     
+    if (HAS_CPUTEMP or HAS_ONEWIRE or HAS_DHT) { // and *_enabled
     addByte('T');
+#ifdef DEF_CPUTEMP
     addFloat(getChipTemp());
-#ifdef ONEWIRE
+#endif
+#ifdef DEF_ONEWIRE
     if (voltage > 2.75) {
         double temp = getDSTemp();
         if (temp != 85) {
@@ -338,9 +376,10 @@ void sendOwn() {
         }
     }
 #endif
+    }
 
 
-#ifdef RFM69
+#ifdef DEF_RFM69
     if (lastrssi != 0) {
         addByte('R');
         addFloat((float)lastrssi);
@@ -655,7 +694,7 @@ void handlePacket() {
 }
 
 void handleRX() {
-#ifdef RFM69
+#ifdef DEF_RFM69
     rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
     if (packet_received) {
         packet_source = SOURCE_RFM;
@@ -712,12 +751,12 @@ void send() {
     Serial.write("\r\n");
     Serial.flush();
 #endif
-#ifdef RFM69
+#ifdef DEF_RFM69
     send_rfm69();
 #endif
 }
 
-#ifdef RFM69
+#ifdef DEF_RFM69
 void send_rfm69() {
     rf69_send(databuf, dataptr, rfm_txpower);
 }
@@ -955,6 +994,7 @@ void dump_rfm69_registers() {
 #endif
 /* ------------------------------------------------------------------------- */
 
+#ifdef DEF_CPUTEMP
 double getChipTemp() {
   uint16_t wADC;
   
@@ -981,7 +1021,9 @@ double getChipTemp() {
   // The offset of 324.31 could be wrong. It is just an indication.
   return (wADC - 244.31d) / 1.22d;
 }
+#endif
 
+#ifdef DEF_CPUVCC
 double getVCCVoltage() {
   uint16_t wADC;
   
@@ -1006,6 +1048,7 @@ double getVCCVoltage() {
   wADC = ADCW;
   return wADC ? (1.1d * 1023) / wADC : -1;
 }
+#endif
 
 double getBatteryVoltage() {
   uint16_t wADC;
@@ -1025,7 +1068,7 @@ double getBatteryVoltage() {
   return wADC ? (((wADC / 1024.0d) * 1.1d) * vsense_mult) + vsense_offset : -1;
 }
 
-#ifdef ONEWIRE
+#ifdef DEF_ONEWIRE
 double getDSTemp() {
     dstemp.requestTemperatures();
     

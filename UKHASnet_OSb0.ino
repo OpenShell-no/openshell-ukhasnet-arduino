@@ -25,6 +25,7 @@ const bool HAS_RFM69 = false;
 #endif
 
 
+
 #ifdef DEF_ONEWIRE
 const bool HAS_ONEWIRE = true;
 #include <OneWire.h>
@@ -120,6 +121,19 @@ const byte PAYLOADSIZE = 64;
 double vsense_offset = 0.74d; // Seems like it depends on current usage. Jumps to 0.76V
 double vsense_mult = 15.227d;
 
+bool vbat_enabled = true;
+int    vbat_pin    = 0; // Analog pin A0
+double vbat_offset = 0.023d;
+double vbat_mult   = 11.0d;
+
+bool vpanel_enabled = true;
+int    vpanel_pin    = 1; // Analog pin A1
+double vpanel_offset = 0.330d;
+double vpanel_mult   = 11.1d;
+
+bool   powersave = true; // Allways assume powersave on boot.
+double powersave_treshold = 3.0; // Treshold voltage in volts.
+double voltage = 0; // Last measured voltage.
 
 // const uint32_t baudrate = 9600;
 // The code in this sketch assumes clock speed of 8MHz (eg. the internal oscilator)
@@ -314,8 +328,6 @@ void setup() {
         Serial.print(" = ");
         Serial.println(CONFIG[i][1], HEX);
     }
-    
-    rf69_set_mode(RFM69_MODE_RX);
     //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
     
 #ifdef HAVE_HWSERIAL0
@@ -334,18 +346,14 @@ void setup() {
     
 }
 
-double voltage = 0;
 
 double readVCC() {
 #ifdef DEF_CPUVCC
     voltage = getVCCVoltage();
-#endif
-    
-#ifdef DEF_RFM69
-    if (voltage < 2.5) {
-        rfm_txpower = 10;
-    } else {
-        rfm_txpower = 20;
+    if (powersave and (voltage - 0.001d > powersave_treshold)) {
+        powersave = false;
+    } else if ((not powersave) and (voltage + 0.001d < powersave_treshold)) {
+        powersave = true;
     }
 #endif
     return voltage;
@@ -367,7 +375,17 @@ void sendOwn() {
     
     addByte('V');
     addFloat(readVCC());
-    //addByte(',');
+    if (vbat_enabled or vpanel_enabled) {
+        addByte(',');
+    }
+    if (vbat_enabled) {
+        addFloat(readADCVoltage(vbat_pin, vbat_mult, vbat_offset));
+    }
+    if (vpanel_enabled) {
+        addByte(',');
+        addFloat(readADCVoltage(vpanel_pin, vpanel_mult, vpanel_offset));
+        
+    }
     //addFloat(getBatteryVoltage());
     
     if (HAS_CPUTEMP or HAS_ONEWIRE or HAS_DHT) { // and *_enabled
@@ -391,14 +409,18 @@ void sendOwn() {
     addByte(',');
     addLong(ukhasnet_repeatcount);
     */
-
-
+    
+    if (powersave) {
+        addString("Z1");
+    } else {
+        addString("Z0");
 #ifdef DEF_RFM69
-    if (lastrssi != 0) {
-        addByte('R');
-        addFloat((float)lastrssi);
+        if (lastrssi != 0) {
+            addByte('R');
+            addFloat((float)lastrssi);
+        }
+#endif
     }
-#endif    
     
     switch (gps_lock) {
         case GPS_LOCK_2D:
@@ -421,7 +443,6 @@ void sendOwn() {
         case 1: // Location
             break;
         case 2: // Mode
-            addString("Z0");
             break;
         /*case 3: // Comment
             addString(":no sleep");
@@ -711,11 +732,13 @@ void handlePacket() {
 
 void handleRX() {
 #ifdef DEF_RFM69
-    rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
-    if (packet_received) {
-        packet_source = SOURCE_RFM;
-        Serial.println(packet_received);
-        handlePacket();
+    if (not powersave) {
+        rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
+        if (packet_received) {
+            packet_source = SOURCE_RFM;
+            Serial.println(packet_received);
+            handlePacket();
+        }
     }
 #endif
 #ifdef SERIALDEBUG
@@ -729,7 +752,6 @@ void handleRX() {
 
 /* ------------------------------------------------------------------------- */
 const unsigned long MAXULONG = 0xffffffff;
-
 unsigned long now;
 unsigned long getTimeSince(unsigned long ___start) {
     unsigned long interval;
@@ -744,7 +766,13 @@ unsigned long getTimeSince(unsigned long ___start) {
 /* ------------------------------------------------------------------------- */
 
 unsigned long timer_sendown = 0; //millis();
+unsigned long timer_checkvoltage = 0;
 void loop() {
+    if (getTimeSince(timer_checkvoltage >= 100)) {
+        timer_checkvoltage = millis();
+        readVCC();
+    }
+    
     handleRX();
     
     if (timer_lastgps_enabled and getTimeSince(timer_lastgps) >= 15000) {
@@ -774,7 +802,19 @@ void send() {
 
 #ifdef DEF_RFM69
 void send_rfm69() {
+    if (powersave) {
+        rfm_txpower = 10;
+    } else {
+        rfm_txpower = 20;
+    }
+    
     rf69_send(databuf, dataptr, rfm_txpower);
+    
+    if (powersave) {
+        rf69_set_mode(RFM69_MODE_SLEEP);
+    } else {
+        rf69_set_mode(RFM69_MODE_RX);
+    }
 }
 
 #ifdef HAVE_HWSERIAL0
@@ -1066,8 +1106,27 @@ double getVCCVoltage() {
 }
 #endif
 
-double getBatteryVoltage() {
-    return 0.0;
+
+double readADCVoltage(uint8_t adc, double multiplier, double offset) {
+    // ATmega328PB Datasheet: 29.9.1 - p321
+    // Measures relative to 1.1V Reference, any value above will be 1024
+    uint16_t wADC;
+
+    // Set the internal reference and mux.
+    ADMUX = 0b11000000; // REFS1 = 1; REFS0 = 1; MUX3:0 = 0b0000
+                      // Reference = 1.1V, Measure ADC0
+    ADMUX |= adc; // Select ADC
+    
+    ADCSRA |= _BV(ADEN);  // enable the ADC
+    delay(20);             // wait for voltages to become stable.
+    ADCSRA |= _BV(ADSC);  // Start the ADC
+    while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to finish.
+    wADC = ADCW;
+    // wADC / 1024 * 1.1 == ADC0 Voltage
+    // wADC / 1024 * 1.1 * (VBAT/ADC0V) == VBAT
+    //return wADC ? wADC / 1024.0d * 1.1d: -1;
+    //return wADC ? wADC / 1024.0d * 1.1d * (12.76/0.818555): -1;
+    return wADC ? (((wADC / 1024.0d) * 1.1d) * multiplier) + offset : -1;
 }
 
 #ifdef DEF_ONEWIRE

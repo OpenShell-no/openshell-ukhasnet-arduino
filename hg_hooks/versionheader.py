@@ -22,11 +22,11 @@ def generate(ui, repo, **kwargs):
     variables = {}
     ctx = repo[None]
 
-    unclean = ctx.rev() is None
+    dirty = not not ctx.dirty()
 
     variables['branch'] = ctx.branch()
     version = ""
-    if unclean:
+    if dirty:
         parents = sorted(ctx.parents(), key=lambda x: x.rev(), reverse=True)
         parent = parents[0]
         variables['commit'] = parent.hex() + '+'

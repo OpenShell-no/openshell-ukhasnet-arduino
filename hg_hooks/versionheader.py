@@ -17,36 +17,41 @@ const char firmware_date[] = "{date}";
 """
 
 import datetime
+import traceback
 
 def generate(ui, repo, **kwargs):
-    variables = {}
-    ctx = repo[None]
+    try:
+        variables = {}
+        ctx = repo[None]
 
-    dirty = not not ctx.dirty()
+        dirty = not not ctx.dirty()
 
-    variables['branch'] = ctx.branch()
-    version = ""
-    if dirty:
-        parents = sorted(ctx.parents(), key=lambda x: x.rev(), reverse=True)
-        parent = parents[0]
-        variables['commit'] = parent.hex() + '+'
-        if not version:
-            version = "0.0.{revision}+".format(revision=parent.rev())
-    else:
-        variables['commit'] = ctx.hex()
-        if not version:
-            version = "0.0.{revision}".format(revision=ctx.rev())
+        variables['branch'] = ctx.branch()
+        version = ""
+        if dirty:
+            parents = sorted(ctx.parents(), key=lambda x: x.rev(), reverse=True)
+            parent = parents[0]
+            variables['commit'] = "{commit}+".format(commit=parent.hex())
+            if not version:
+                version = "0.0.{revision}+".format(revision=parent.rev())
+        else:
+            variables['commit'] = ctx.hex()
+            if not version:
+                version = "0.0.{revision}".format(revision=ctx.rev())
 
-    d = ctx.date()
-    variables['date'] = (datetime.datetime.fromtimestamp(int(d[0])) + datetime.timedelta(seconds=d[1])).isoformat() + 'Z'
+        d = ctx.date()
+        variables['date'] = (datetime.datetime.fromtimestamp(int(d[0])) + datetime.timedelta(seconds=d[1])).isoformat() + 'Z'
 
-    tags = ctx.tags()
+        tags = ctx.tags()
 
-    variables['version'] = version
-    print(variables)
+        variables['version'] = version
+        print(variables)
 
-    with open(VERSION_HEADER_FILE, "wb") as fh:
-        fh.write(TEMPLATE.format(**variables))
+        with open(VERSION_HEADER_FILE, "wb") as fh:
+            fh.write(TEMPLATE.format(**variables))
+    except:
+        traceback.print_exc()
+        raise
 
 def main():
     import os

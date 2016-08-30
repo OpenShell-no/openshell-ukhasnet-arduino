@@ -1,3 +1,4 @@
+#include "firmware_version.h"
 //#define DEF_ONEWIRE
 #define DEF_RFM69
 #define SERIALDEBUG
@@ -184,9 +185,9 @@ void addString(char *value) {
 }
 
 char _floatbuf[16];
-void addFloat(double value, byte precission = 2, bool strip=true) { 
+void addFloat(double value, byte precission = 2, bool strip=true) {
     dtostrf(value, 1, precission, _floatbuf);
-    
+
     if (precission and strip) {
         byte e;
         for (byte i=0;i<16;i++) {
@@ -250,9 +251,9 @@ void rfm69_reset() {
     digitalWrite(rfm69_reset_pin, HIGH);
     delay(100);
     digitalWrite(rfm69_reset_pin, LOW);
-    
+
     spi_set_chipselect(rfm69_chipselect_pin);
-    
+
     while(rf69_init() != RFM_OK) {
         delay(100);
     }
@@ -265,19 +266,19 @@ void rfm69_set_frequency(float freqMHz) {
     freqbuf[0] = (_freq >> 16) & 0xff;
     freqbuf[1] = (_freq >> 8) & 0xff;
     freqbuf[2] = _freq & 0xff;
-    
+
 #ifdef HAVE_HWSERIAL0
     Serial.print(F("Setting frequency to: "));
     Serial.print(freqMHz, DEC);
     Serial.print(F("MHz = 0x"));
     Serial.println(_freq, HEX);
     Serial.flush();
-    
+
     _rf69_burst_write(RFM69_REG_07_FRF_MSB, freqbuf, 3);
-    
+
     _rf69_burst_read(RFM69_REG_07_FRF_MSB, freqbuf, 3);
     _freq = (freqbuf[0] << 16) | (freqbuf[1] << 8) | freqbuf[2];
-    
+
     Serial.print(F("Frequency was set to: "));
     Serial.print((float)_freq / 1000000 * 61.04f, DEC);
     Serial.print(F("MHz = 0x"));
@@ -288,11 +289,24 @@ void rfm69_set_frequency(float freqMHz) {
 #endif
 
 void setup() {
-  
+
 #ifdef HAVE_HWSERIAL0
     Serial.begin(115200);
-    Serial.print(F("\nUKHASnet: Oddstr13's atmega328 battery node "));
+    Serial.println();
+
+    Serial.print(F("OpenShell UKHASnet Arduino firmware v"));
+    Serial.print(firmware_version);
+    Serial.print(' ');
+    Serial.println(firmware_date);
+
+    Serial.print(F("Revision: "));
+    Serial.print(firmware_commit);
+    Serial.print('@');
+    Serial.println(firmware_branch);
+
+    Serial.print("Node: ");
     Serial.println(NODE_NAME);
+
     Serial.flush();
 #endif
 
@@ -306,7 +320,7 @@ void setup() {
     Serial.print(F("1-wire devices: "));
     Serial.print(dstemp.getDeviceCount(), DEC);
     Serial.println();
-    Serial.print(F("1-wire parasite: ")); 
+    Serial.print(F("1-wire parasite: "));
     Serial.println(dstemp.isParasitePowerMode());
     Serial.flush();
 #endif
@@ -316,12 +330,12 @@ void setup() {
         Serial.flush();
 #endif
     }
-    
+
 #endif
 
 #ifdef DEF_RFM69
     rfm69_reset();
-    
+
     for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
         Serial.print("Setting ");
         Serial.print(CONFIG[i][0], HEX);
@@ -329,12 +343,12 @@ void setup() {
         Serial.println(CONFIG[i][1], HEX);
     }
     //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
-    
+
 #ifdef HAVE_HWSERIAL0
     Serial.println(F("Radio started."));
-    
+
     dump_rfm69_registers();
-    
+
     Serial.flush();
     rfm69_set_frequency(869.5f);
 #endif
@@ -343,7 +357,7 @@ void setup() {
 #ifdef DEF_RFM69
     sendOwn();
 #endif
-    
+
 }
 
 
@@ -369,10 +383,10 @@ void bumpSequence() {
 
 void sendOwn() {
     resetData();
-    
+
     addByte(HOPS);
     addByte(sequence+97);
-    
+
     addByte('V');
     addFloat(readVCC());
     if (vbat_enabled or vpanel_enabled) {
@@ -384,10 +398,10 @@ void sendOwn() {
     if (vpanel_enabled) {
         addByte(',');
         addFloat(readADCVoltage(vpanel_pin, vpanel_mult, vpanel_offset));
-        
+
     }
     //addFloat(getBatteryVoltage());
-    
+
     if (HAS_CPUTEMP or HAS_ONEWIRE or HAS_DHT) { // and *_enabled
     addByte('T');
 #ifdef DEF_CPUTEMP
@@ -409,7 +423,7 @@ void sendOwn() {
     addByte(',');
     addLong(ukhasnet_repeatcount);
     */
-    
+
     if (powersave) {
         addString("Z1");
     } else {
@@ -421,7 +435,7 @@ void sendOwn() {
         }
 #endif
     }
-    
+
     switch (gps_lock) {
         case GPS_LOCK_2D:
             addByte('L');
@@ -438,7 +452,7 @@ void sendOwn() {
             addFloat(ALTITUDE, 0);
             break;
     }
-    
+
     switch (sequence) {
         case 1: // Location
             break;
@@ -448,22 +462,22 @@ void sendOwn() {
             addString(":no sleep");
             break;*/
     }
-    
+
     addByte('[');
     addString(NODE_NAME);
     addByte(']');
-    
-    
+
+
     send();
     bumpSequence();
 }
 
 void sendPositionStatus() {
     resetData();
-    
+
     addByte(HOPS);
     addByte(sequence+97);
-    
+
     switch (gps_lock) {
         case GPS_LOCK_UNKNOWN:
             addString(":GPS Disconnected");
@@ -488,11 +502,11 @@ void sendPositionStatus() {
             addString(":3D GPS Lock");
             break;
     }
-    
+
     addByte('[');
     addString(NODE_NAME);
     addByte(']');
-    
+
     send();
     bumpSequence();
 }
@@ -597,10 +611,10 @@ uint8_t s_sub(char* source, char* target, uint8_t end) {
 
 float parse_float(char* buf, uint8_t len) {
     //Serial.println(buf);
-    
+
     float _f_mult = 0.1;
     bool _neg = buf[0] == '-';
-    
+
     for (uint8_t i=0; i<len; i++) {
         if (buf[i] == '.') {
             break;
@@ -609,20 +623,20 @@ float parse_float(char* buf, uint8_t len) {
             _f_mult *= 10;
         }
     }
-    
+
     float res = 0;
-    
+
     for (uint8_t i=0; i<len; i++) {
         if (buf[i] >= '0' and buf[i] <= '9') {
             res += (buf[i] - 48) * _f_mult;
             _f_mult /= 10;
         }
     }
-    
+
     if (_neg) {
         res *= -1;
     }
-    
+
     //Serial.println(res);
     return res;
 }
@@ -658,7 +672,7 @@ void handleGPSString() {
         }
     // $GPGGA,123710.00,6240.76823,N,01001.78175,E,1,06,1.16,613.9,M,40.5,M,,*52
     } else if (s_cmp((char*)databuf, "$GPGGA")) {
-        
+
         timer_lastgps = millis();
         timer_lastgps_enabled = true;
         if (gps_lock == GPS_LOCK_2D or gps_lock == GPS_LOCK_3D) {
@@ -668,18 +682,18 @@ void handleGPSString() {
             s_sub((char*)databuf, _gpsbuf, _gpspos+2, c_find(_gpspos, ',')-1);
             _gpsfloat = parse_float(_gpsbuf);
             LATITUDE += _gpsfloat / 60; // TODO: Handle N/S
-            
+
             _gpspos = c_find(',', 3);
             s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
-            
+
             if (_gpsbuf[0] == 'S') {
                 LATITUDE *= -1;
             }
             Serial.print("Latitude: ");
             Serial.println(LATITUDE);
-            
-            
-            
+
+
+
             _gpspos = c_find(',', 4);
             LONGITUDE = parse_float((char*)&databuf[_gpspos], 3);
             //LONGITUDE = (databuf[_gpspos + 1] - 48) * 10;
@@ -687,29 +701,29 @@ void handleGPSString() {
             s_sub((char*)databuf, _gpsbuf, _gpspos+3, c_find(_gpspos, ',')-1);
             _gpsfloat = parse_float(_gpsbuf);
             LONGITUDE += _gpsfloat / 60; // TODO: Handle N/S
-            
+
             _gpspos = c_find(',', 5);
             s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
-            
+
             if (_gpsbuf[0] == 'W') {
                 LONGITUDE *= -1;
             }
             Serial.print("Longitude: ");
             Serial.println(LONGITUDE);
         }
-        
+
         if (gps_lock == GPS_LOCK_3D) {
             _gpspos = c_find(',', 9);
             ALTITUDE = parse_float((char*)&databuf[_gpspos], c_find(_gpspos, ',')-1-_gpspos);
             Serial.print("Altitude: ");
             Serial.println(ALTITUDE);
         }
-        
+
         if (_gps_oldstatus != gps_lock) {
             sendPositionStatus();
         }
         _gps_oldstatus = gps_lock;
-    }    
+    }
 }
 
 void handlePacket() {
@@ -772,15 +786,15 @@ void loop() {
         timer_checkvoltage = millis();
         readVCC();
     }
-    
+
     handleRX();
-    
+
     if (timer_lastgps_enabled and getTimeSince(timer_lastgps) >= 15000) {
         gps_lock = GPS_LOCK_UNKNOWN;
         sendPositionStatus();
         timer_lastgps_enabled = false;
     }
-    
+
     if (getTimeSince(timer_sendown) >= (BROADCAST_INTERVAL * 1000)) {
         timer_sendown = millis();
         sendOwn();
@@ -807,9 +821,9 @@ void send_rfm69() {
     } else {
         rfm_txpower = 20;
     }
-    
+
     rf69_send(databuf, dataptr, rfm_txpower);
-    
+
     if (powersave) {
         rf69_set_mode(RFM69_MODE_SLEEP);
     } else {
@@ -820,7 +834,7 @@ void send_rfm69() {
 #ifdef HAVE_HWSERIAL0
 void dump_rfm69_registers() {
     rfm_reg_t result;
-    
+
     _rf69_read(RFM69_REG_01_OPMODE, &result);
     Serial.print(F("REG_01_OPMODE: 0x"));
     Serial.println(result, HEX);
@@ -1053,7 +1067,7 @@ void dump_rfm69_registers() {
 #ifdef DEF_CPUTEMP
 double getChipTemp() {
   uint16_t wADC;
-  
+
   // Set the internal reference and mux.
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined (__AVR_ATtiny85__)
   ADMUX = 0b10001111; // REFS2 = 0; REFS1 = 1; REFS0 = 0; MUX3:0 = 0b1111
@@ -1061,7 +1075,7 @@ double getChipTemp() {
 #elif defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined (__AVR_ATtiny84__)
   ADMUX = 0b10100010; // REFS1 = 1; REFS0 = 0; MUX5:0 = 0b100010
                       // Reference = 1.1V, Measure ADC8 (Temperature)
-#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__)  || defined (__AVR_ATmega328PB__) 
+#elif defined(__AVR_ATmega48__) || defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__)  || defined (__AVR_ATmega328PB__)
   ADMUX = 0b11001000; // REFS1 = 1; REFS0 = 1; MUX3:0 = 0b1000
                       // Reference = 1.1V, Measure ADC8 (Temperature)
 #else
@@ -1082,7 +1096,7 @@ double getChipTemp() {
 #ifdef DEF_CPUVCC
 double getVCCVoltage() {
   uint16_t wADC;
-  
+
   // Set the internal reference and mux.
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined (__AVR_ATtiny85__)
   ADMUX = 0b00001110; // REFS2 = 0; REFS1 = 0; REFS0 = 0; MUX3:0 = 0b1100
@@ -1116,7 +1130,7 @@ double readADCVoltage(uint8_t adc, double multiplier, double offset) {
     ADMUX = 0b11000000; // REFS1 = 1; REFS0 = 1; MUX3:0 = 0b0000
                       // Reference = 1.1V, Measure ADC0
     ADMUX |= adc; // Select ADC
-    
+
     ADCSRA |= _BV(ADEN);  // enable the ADC
     delay(20);             // wait for voltages to become stable.
     ADCSRA |= _BV(ADSC);  // Start the ADC
@@ -1132,9 +1146,9 @@ double readADCVoltage(uint8_t adc, double multiplier, double offset) {
 #ifdef DEF_ONEWIRE
 double getDSTemp() {
     dstemp.requestTemperatures();
-    
+
     double temp = dstemp.getTempC(dsaddr);
-    
+
     return temp;
 }
 #endif

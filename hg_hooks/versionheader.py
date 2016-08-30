@@ -26,14 +26,16 @@ def generate(ui, repo, **kwargs):
 
         dirty = not not ctx.dirty()
 
+        parents = sorted(ctx.parents(), key=lambda x: x.rev(), reverse=True)
+        ctx = parents[0]
+
+
         variables['branch'] = ctx.branch()
         version = ""
         if dirty:
-            parents = sorted(ctx.parents(), key=lambda x: x.rev(), reverse=True)
-            parent = parents[0]
-            variables['commit'] = "{commit}+".format(commit=parent.hex())
+            variables['commit'] = "{commit}+".format(commit=ctx.hex())
             if not version:
-                version = "0.0.{revision}+".format(revision=parent.rev())
+                version = "0.0.{revision}+".format(revision=ctx.rev())
         else:
             variables['commit'] = ctx.hex()
             if not version:

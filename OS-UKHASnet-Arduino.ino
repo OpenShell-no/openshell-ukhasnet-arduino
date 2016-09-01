@@ -115,6 +115,17 @@ location_altitude       float
 
 cputemp_enabled         bool
 */
+int freeRam ()
+{
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
+void debug() {
+    Serial.print(F("Free RAM: "));
+    Serial.println(freeRam());
+}
 
 const byte BUFFERSIZE = 128;
 const byte PAYLOADSIZE = 64;
@@ -304,8 +315,10 @@ void setup() {
     Serial.print('@');
     Serial.println(firmware_branch);
 
-    Serial.print("Node: ");
+    Serial.print(F("Node: "));
     Serial.println(NODE_NAME);
+
+    debug();
 
     Serial.flush();
 #endif
@@ -353,11 +366,9 @@ void setup() {
     rfm69_set_frequency(869.5f);
 #endif
 #endif
-
 #ifdef DEF_RFM69
     sendOwn();
 #endif
-
 }
 
 
@@ -382,6 +393,8 @@ void bumpSequence() {
 }
 
 void sendOwn() {
+    debug();
+    
     resetData();
 
     addByte(HOPS);
@@ -470,6 +483,8 @@ void sendOwn() {
 
     send();
     bumpSequence();
+
+    debug();
 }
 
 void sendPositionStatus() {

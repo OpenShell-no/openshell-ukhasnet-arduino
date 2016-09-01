@@ -44,7 +44,9 @@ def generate(ui, repo, **kwargs):
         d = ctx.date()
         variables['date'] = (datetime.datetime.fromtimestamp(int(d[0])) + datetime.timedelta(seconds=d[1])).isoformat() + 'Z'
 
-        tags = ctx.tags()
+        tags = ctx.tags() # TODO: make function to locate latest x.y.z tag in parents, and use as basis of version
+        while 'tip' in tags: tags.remove('tip')
+        print(tags)
 
         variables['version'] = version
         print(variables)

@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <Arduino.h>
 
 #ifndef BUFFER_H
 #define BUFFER_H

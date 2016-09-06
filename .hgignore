@@ -1,3 +1,4 @@
 ^firmware_version\.h$
 .*\.pyc$
 .*\.pyo$
+.*\.o$

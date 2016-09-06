@@ -10,5 +10,7 @@ uint8_t _gpspos;
 float _gpsfloat;
 char _gpsbuf[17];
 gps_lock_t _gps_oldstatus = GPS_LOCK_UNKNOWN;
+bool do_sendgpsstatus = false;
+
 
 void handleGPSString();

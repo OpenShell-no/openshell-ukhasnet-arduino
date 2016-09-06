@@ -1,3 +1,7 @@
+#include <stdint.h>
+#include "../config.h"
+#include "../utilities/buffer.h"
+#include "gps.h"
 
 void handleGPSString() {
     if (s_cmp((char*)databuf, "$GPGSA")) {
@@ -69,7 +73,7 @@ void handleGPSString() {
         }
 
         if (_gps_oldstatus != gps_lock) {
-            sendPositionStatus();
+            do_sendgpsstatus = true;
         }
         _gps_oldstatus = gps_lock;
     }

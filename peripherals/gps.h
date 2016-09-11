@@ -1,3 +1,5 @@
+#ifndef peripherals_gps_h
+#define peripherals_gps_h
 
 typedef enum gps_lock_t { GPS_LOCK_UNKNOWN, GPS_LOCK_NO, GPS_LOCK_2D, GPS_LOCK_3D } gps_lock_t;
 gps_lock_t gps_lock = GPS_LOCK_UNKNOWN;
@@ -14,3 +16,5 @@ bool do_sendgpsstatus = false;
 
 
 void handleGPSString();
+
+#endif

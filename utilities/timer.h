@@ -20,19 +20,20 @@
   Boston, MA  02111-1307  USA
 */
 
-#ifndef WiringPrivate_h
-#define WiringPrivate_h
+#ifndef utilities_timer_h
+#define utilities_timer_h
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include <stdarg.h>
 
-//#include "Arduino.h"
 
-#ifdef __cplusplus
-extern "C"{
-#endif
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
+#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
+
+void yield(void); // FIXME: This should probably do something sane somewhere.
 
 unsigned long millis();
 unsigned long micros();
@@ -69,9 +70,5 @@ uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, u
 #endif
 
 typedef void (*voidFuncPtr)(void);
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 #endif

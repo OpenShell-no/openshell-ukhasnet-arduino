@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "util.h"
-#include "../libraries/wiring.h"
+#include "timer.h"
 
 int freeRam ()
 {

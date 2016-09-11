@@ -1,3 +1,6 @@
+#ifndef peripherals_rfm69_h
+#define peripherals_rfm69_h
+
 #include <stdint.h>
 
 #include <UKHASnetRFM69-config.h>
@@ -26,3 +29,5 @@ void rfm69_set_frequency(float freqMHz);
 
 void send_rfm69();
 void dump_rfm69_registers();
+
+#endif

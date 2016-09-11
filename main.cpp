@@ -8,10 +8,9 @@
 
 #include <avr/io.h>
 
-#include "libraries/wiring.h"
-
 #include "utilities/util.h"
 #include "utilities/buffer.h"
+#include "utilities/timer.h"
 
 #if defined (AVR)
   #include "boards/avr.h"

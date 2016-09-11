@@ -2,7 +2,7 @@
 #include "../config.h"
 #include "../utilities/buffer.h"
 #include "gps.h"
-#include "../libraries/wiring.h"
+#include "../utilities/timer.h"
 
 void handleGPSString() {
     if (s_cmp((char*)databuf, "$GPGSA")) {

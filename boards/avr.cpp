@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include <avr/io.h>
-#include "../libraries/wiring.h"
+#include "../config.h"
+#include "../utilities/timer.h"
+
+void yield() {} // TODO: yield should probably do something sane
 
 #ifdef USE_CPUTEMP
 double getChipTemp() {

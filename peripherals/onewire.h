@@ -1,4 +1,7 @@
-#ifdef UNDEFINED__
+#ifndef peripherals_onewire_h
+#define peripherals_onewire_h
+
+#ifdef UNDEFINED__ // TODO: Implement/port OneWire
 #include <stdint.h>
 
 #include <OneWire.h>
@@ -15,4 +18,5 @@ DeviceAddress dsaddr;
 
 
 double getDSTemp();
+#endif
 #endif

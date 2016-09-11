@@ -1,3 +1,4 @@
+#ifdef UNDEFINED__
 #include <stdint.h>
 
 #include <OneWire.h>
@@ -14,3 +15,4 @@ DeviceAddress dsaddr;
 
 
 double getDSTemp();
+#endif

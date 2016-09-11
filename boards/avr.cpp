@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <avr/io.h>
-#include <util/delay.h>
-#define delay _delay_ms
+#include "../libraries/wiring.h"
 
 #ifdef USE_CPUTEMP
 double getChipTemp() {

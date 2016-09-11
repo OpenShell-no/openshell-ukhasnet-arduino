@@ -1,3 +1,7 @@
+#ifdef UNDEFINED__
+
+#include <onewire.h>
+
 double getDSTemp() {
     dstemp.requestTemperatures();
 
@@ -5,3 +9,5 @@ double getDSTemp() {
 
     return temp;
 }
+
+#endif

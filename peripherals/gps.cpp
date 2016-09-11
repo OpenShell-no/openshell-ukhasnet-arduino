@@ -2,6 +2,7 @@
 #include "../config.h"
 #include "../utilities/buffer.h"
 #include "gps.h"
+#include "../libraries/wiring.h"
 
 void handleGPSString() {
     if (s_cmp((char*)databuf, "$GPGSA")) {
@@ -42,8 +43,8 @@ void handleGPSString() {
             if (_gpsbuf[0] == 'S') {
                 LATITUDE *= -1;
             }
-            Serial.print("Latitude: ");
-            Serial.println(LATITUDE);
+            //Serial.print("Latitude: "); // FIXME: Implement printing
+            //Serial.println(LATITUDE);
 
 
 
@@ -61,15 +62,15 @@ void handleGPSString() {
             if (_gpsbuf[0] == 'W') {
                 LONGITUDE *= -1;
             }
-            Serial.print("Longitude: ");
-            Serial.println(LONGITUDE);
+            //Serial.print("Longitude: "); // FIXME: Implement printing
+            //Serial.println(LONGITUDE);
         }
 
         if (gps_lock == GPS_LOCK_3D) {
             _gpspos = c_find(',', 9);
             ALTITUDE = parse_float((char*)&databuf[_gpspos], c_find(_gpspos, ',')-1-_gpspos);
-            Serial.print("Altitude: ");
-            Serial.println(ALTITUDE);
+            //Serial.print("Altitude: "); // FIXME: Implement printing
+            //Serial.println(ALTITUDE);
         }
 
         if (_gps_oldstatus != gps_lock) {

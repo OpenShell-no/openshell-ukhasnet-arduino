@@ -15,11 +15,11 @@ char _floatbuf[16] = "";
 void resetData();
 
 void addString(char *value);
-void addFloat(double value, byte precission = 2, bool strip=true);
-void addCharArray(char *value, byte len);
+void addFloat(double value, uint8_t precission = 2, bool strip=true);
+void addCharArray(char *value, uint8_t len);
 void addLong(unsigned long value);
-void addWord(word value);
-void addByte(byte value);
+void addWord(uint16_t value);
+void addByte(uint8_t value);
 
 /* ------------------------------------------------------------------------- */
 

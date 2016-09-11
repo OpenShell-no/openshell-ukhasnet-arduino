@@ -5,7 +5,7 @@
 
 #include "../utilities/buffer.h"
 
-byte rfm_txpower = 20;
+uint8_t rfm_txpower = 20;
 float rfm_freq_trim = 0.068f;
 int16_t lastrssi = 0;
 

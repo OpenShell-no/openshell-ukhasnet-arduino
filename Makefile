@@ -4,14 +4,18 @@ CLOCK		= 8000000
 BUILDDIR = ./build/
 ASSETS   = ./assets/
 
-SOURCES = $(wildcard *.ino) $(wildcard *.cpp) $(wildcard */*.cpp)
+SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
+LIBRARIES = $(wildcard ../libraries/*/)
 
+INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
-COMPILE = avr-g++ -Wall -Wextra -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -mmcu=atmega328p -I ./$(RFMLIBDIR)
+COMPILE = avr-g++ -Wall -Wextra -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
 
-all: main.hex
+all: firmware_version.h main.hex
 
+firmware_version.h:
+	python ./hg_hooks/versionheader.py
 
 .cpp.o:
 	$(COMPILE) -c $< -o $@
@@ -33,3 +37,5 @@ main.hex: main.elf
 .PHONY: clean
 clean:
 	rm -fq main.hex main.elf main.eep $(OBJECTS)
+
+#vpath %.o $(BUILDDIR)

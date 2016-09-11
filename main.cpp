@@ -3,6 +3,13 @@
 //#ifdef ESP8266    // ESP8266 based platform
 //#ifdef AVR        // AVR based platform
 
+#include <util/delay.h>
+#include <stdlib.h>
+
+#include <avr/io.h>
+
+#include "libraries/wiring.h"
+
 #include "utilities/util.h"
 #include "utilities/buffer.h"
 
@@ -75,7 +82,8 @@ HAS_CPUTEMP
 unsigned long ukhasnet_rxcount = 0;
 unsigned long ukhasnet_repeatcount = 0;
 
-
+unsigned long packet_count = 0;
+byte sequence = 0;
 
 void debug() {
   #ifdef SERIALDEBUG
@@ -110,84 +118,6 @@ void send() {
 }
 
 
-/* ------------------------------------------------------------------------- */
-
-
-
-unsigned long packet_count = 0;
-byte sequence = 0;
-
-void setup() {
-
-#ifdef HAVE_HWSERIAL0
-    Serial.begin(115200);
-    Serial.println();
-
-    Serial.print(F("OpenShell UKHASnet Arduino firmware v"));
-    Serial.print(firmware_version);
-    Serial.print(' ');
-    Serial.println(firmware_date);
-
-    Serial.print(F("Revision: "));
-    Serial.print(firmware_commit);
-    Serial.print('@');
-    Serial.println(firmware_branch);
-
-    Serial.print(F("Node: "));
-    Serial.println(NODE_NAME);
-
-    debug();
-
-    Serial.flush();
-#endif
-
-#ifdef USE_ONEWIRE
-#ifdef HAVE_HWSERIAL0
-    Serial.println(F("Scanning 1-wire bus..."));
-#endif
-    dstemp.begin();
-    dstemp.setResolution(12);
-#ifdef HAVE_HWSERIAL0
-    Serial.print(F("1-wire devices: "));
-    Serial.print(dstemp.getDeviceCount(), DEC);
-    Serial.println();
-    Serial.print(F("1-wire parasite: "));
-    Serial.println(dstemp.isParasitePowerMode());
-    Serial.flush();
-#endif
-    if (!dstemp.getAddress(dsaddr, 0)) {
-#ifdef HAVE_HWSERIAL0
-        Serial.println("WARNING: 1-wire: Unable to find temperature device");
-        Serial.flush();
-#endif
-    }
-
-#endif
-
-#ifdef USE_RFM69
-    rfm69_reset();
-
-    for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
-        Serial.print("Setting ");
-        Serial.print(CONFIG[i][0], HEX);
-        Serial.print(" = ");
-        Serial.println(CONFIG[i][1], HEX);
-    }
-    //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
-
-#ifdef HAVE_HWSERIAL0
-    Serial.println(F("Radio started."));
-
-    dump_rfm69_registers();
-
-    Serial.flush();
-    rfm69_set_frequency(869.5f);
-#endif
-#endif
-    sendOwn();
-}
-
-
 double readVCC() {
 #ifdef USE_CPUVCC
     voltage = getVCCVoltage();
@@ -207,6 +137,47 @@ void bumpSequence() {
         sequence++;
     }
 }
+
+
+void sendPositionStatus() {
+    resetData();
+
+    addByte(HOPS);
+    addByte(sequence+97);
+
+    switch (gps_lock) {
+        case GPS_LOCK_UNKNOWN:
+            addString(":GPS Disconnected");
+            break;
+        case GPS_LOCK_NO:
+            addString(":No GPS lock");
+            break;
+        case GPS_LOCK_2D:
+            addByte('L');
+            addFloat(LATITUDE, 5);
+            addByte(',');
+            addFloat(LONGITUDE, 5);
+            addString(":2D GPS Lock");
+            break;
+        case GPS_LOCK_3D:
+            addByte('L');
+            addFloat(LATITUDE, 5);
+            addByte(',');
+            addFloat(LONGITUDE, 5);
+            addByte(',');
+            addFloat(ALTITUDE, 1);
+            addString(":3D GPS Lock");
+            break;
+    }
+
+    addByte('[');
+    addString(NODE_NAME);
+    addByte(']');
+
+    send();
+    bumpSequence();
+}
+
 
 void sendOwn() {
     debug();
@@ -303,44 +274,82 @@ void sendOwn() {
     debug();
 }
 
-void sendPositionStatus() {
-    resetData();
+/* ------------------------------------------------------------------------- */
 
-    addByte(HOPS);
-    addByte(sequence+97);
 
-    switch (gps_lock) {
-        case GPS_LOCK_UNKNOWN:
-            addString(":GPS Disconnected");
-            break;
-        case GPS_LOCK_NO:
-            addString(":No GPS lock");
-            break;
-        case GPS_LOCK_2D:
-            addByte('L');
-            addFloat(LATITUDE, 5);
-            addByte(',');
-            addFloat(LONGITUDE, 5);
-            addString(":2D GPS Lock");
-            break;
-        case GPS_LOCK_3D:
-            addByte('L');
-            addFloat(LATITUDE, 5);
-            addByte(',');
-            addFloat(LONGITUDE, 5);
-            addByte(',');
-            addFloat(ALTITUDE, 1);
-            addString(":3D GPS Lock");
-            break;
+
+void setup() {
+
+#ifdef HAVE_HWSERIAL0
+    Serial.begin(115200);
+    Serial.println();
+
+    Serial.print(F("OpenShell UKHASnet Arduino firmware v"));
+    Serial.print(firmware_version);
+    Serial.print(' ');
+    Serial.println(firmware_date);
+
+    Serial.print(F("Revision: "));
+    Serial.print(firmware_commit);
+    Serial.print('@');
+    Serial.println(firmware_branch);
+
+    Serial.print(F("Node: "));
+    Serial.println(NODE_NAME);
+
+    debug();
+
+    Serial.flush();
+#endif
+
+#ifdef USE_ONEWIRE
+#ifdef HAVE_HWSERIAL0
+    Serial.println(F("Scanning 1-wire bus..."));
+#endif
+    dstemp.begin();
+    dstemp.setResolution(12);
+#ifdef HAVE_HWSERIAL0
+    Serial.print(F("1-wire devices: "));
+    Serial.print(dstemp.getDeviceCount(), DEC);
+    Serial.println();
+    Serial.print(F("1-wire parasite: "));
+    Serial.println(dstemp.isParasitePowerMode());
+    Serial.flush();
+#endif
+    if (!dstemp.getAddress(dsaddr, 0)) {
+#ifdef HAVE_HWSERIAL0
+        Serial.println("WARNING: 1-wire: Unable to find temperature device");
+        Serial.flush();
+#endif
     }
 
-    addByte('[');
-    addString(NODE_NAME);
-    addByte(']');
+#endif
 
-    send();
-    bumpSequence();
+#ifdef USE_RFM69
+    rfm69_reset();
+
+    for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
+    #ifdef HAVE_HWSERIAL0
+        Serial.print("Setting ");
+        Serial.print(CONFIG[i][0], HEX);
+        Serial.print(" = ");
+        Serial.println(CONFIG[i][1], HEX);
+    #endif
+    }
+    //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
+
+#ifdef HAVE_HWSERIAL0
+    Serial.println(F("Radio started."));
+
+    dump_rfm69_registers();
+
+    Serial.flush();
+    rfm69_set_frequency(869.5f);
+#endif
+#endif
+    sendOwn();
 }
+
 
 uint8_t path_start, path_end;
 bool has_repeated;
@@ -355,7 +364,9 @@ bool packet_received;
 // packet_source_t packet_source;
 
 void handleUKHASNETPacket() {
+#ifdef HAVE_HWSERIAL0
     Serial.println("handleUKHASNETPacket");
+#endif
     ukhasnet_rxcount++;
     path_start = 0;
     path_end = 0;
@@ -381,7 +392,7 @@ void handleUKHASNETPacket() {
         addByte(',');
         addCharArray(NODE_NAME, NODE_NAME_LEN);
         addByte(']');
-        delay(random(0, 600));
+        delay(rand() % 601);
         send();
         ukhasnet_repeatcount++;
     }
@@ -389,11 +400,13 @@ void handleUKHASNETPacket() {
 
 
 void handlePacket() {
+#ifdef HAVE_HWSERIAL0
     Serial.print("handlePacket ");
     Serial.write(databuf[0]);
     Serial.write(databuf[1]);
     //Serial.write(databuf[dataptr]);
     Serial.println();
+#endif
     if (databuf[0] >= '0' and
         databuf[0] <= '9' and
         databuf[1] >= 'a' and
@@ -412,7 +425,9 @@ void handleRX() {
         rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
         if (packet_received) {
             packet_source = SOURCE_RFM;
+            #ifdef HAVE_HWSERIAL0
             Serial.println(packet_received);
+            #endif
             handlePacket();
         }
     }
@@ -455,3 +470,13 @@ void loop() {
 }
 
 /* ------------------------------------------------------------------------- */
+
+int main() {
+  sei(); // Enable interrupts
+
+  setup();
+  while (true) {
+    loop();
+  }
+  return 0;
+}

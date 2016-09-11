@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <Arduino.h>
 
 int freeRam();
 

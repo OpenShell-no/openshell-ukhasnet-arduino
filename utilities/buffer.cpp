@@ -1,5 +1,8 @@
 #include <stdint.h>
-//#include "buffer.h"
+#include <string.h>
+#include <stdlib.h>
+
+#include "buffer.h"
 
 
 /* ------------------------------------------------------------------------- */
@@ -20,18 +23,18 @@ void addString(char *value) {
 }
 
 
-void addFloat(double value, byte precission, bool strip) {
+void addFloat(double value, uint8_t precission, bool strip) {
     dtostrf(value, 1, precission, _floatbuf);
 
     if (precission and strip) {
-        byte e;
-        for (byte i=0;i<16;i++) {
+        uint8_t e = 0;
+        for (uint8_t i=0;i<16;i++) {
             if (!_floatbuf[i]) {
                 e = i-1;
                 break;
             }
         }
-        for (byte i=e; i; i--) {
+        for (uint8_t i=e; i; i--) {
             if (_floatbuf[i] == '0') {
                 _floatbuf[i] = 0;
             } else if (_floatbuf[i] == '.') {
@@ -53,9 +56,9 @@ void addFloat(double value, byte precission, bool strip) {
     addString(_floatbuf);
 }
 
-void addCharArray(char *value, byte len) {
+void addCharArray(char *value, uint8_t len) {
   /* Add char array to the output data buffer (databuf) */
-  for (byte i=0; i<len; i++) {
+  for (uint8_t i=0; i<len; i++) {
     if (dataptr < BUFFERSIZE) {
       databuf[dataptr++] = value[i];
     }
@@ -69,12 +72,12 @@ void addLong(unsigned long value) { // long, unsigned long
   databuf[dataptr++] = value & 0xff;
 }
 
-void addWord(word value) { // word, int, unsigned int
+void addWord(uint16_t value) { // word, int, unsigned int
   databuf[dataptr++] = value >> 8 & 0xff;
   databuf[dataptr++] = value & 0xff;
 }
 
-void addByte(byte value) { // byte, char, unsigned char
+void addByte(uint8_t value) { // byte, char, unsigned char
   databuf[dataptr++] = value;
 }
 

@@ -1,11 +1,15 @@
 #include "rfm69.h"
+#include "../libraries/wiring.h"
+
+#include "../config.h"
 
 void rfm69_reset() {
+  /*
     pinMode(rfm69_reset_pin, OUTPUT);
     digitalWrite(rfm69_reset_pin, HIGH);
     delay(100);
     digitalWrite(rfm69_reset_pin, LOW);
-
+*/
     spi_set_chipselect(rfm69_chipselect_pin);
 
     while(rf69_init() != RFM_OK) {
@@ -42,8 +46,6 @@ void rfm69_set_frequency(float freqMHz) {
 
 
 
-
-#ifdef USE_RFM69
 void send_rfm69() {
     if (powersave) {
         rfm_txpower = 10;

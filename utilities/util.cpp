@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include "util.h"
+#include "../libraries/wiring.h"
 
 int freeRam ()
 {

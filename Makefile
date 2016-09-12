@@ -4,13 +4,15 @@ CLOCK		= 8000000
 BUILDDIR = ./build/
 ASSETS   = ./assets/
 
-SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
+LIBRARIES = ../libraries/ukhasnet-rfm69
+LIBRARYSOURCES = $(wildcard ../libraries/ukhasnet-rfm69/*.c) $(wildcard ../libraries/ukhasnet-rfm69/*/*.c)
+
+SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp) $(LIBRARYSOURCES)
 OBJECTS = $(SOURCES:.cpp=.o)
-LIBRARIES = $(wildcard ../libraries/*/)
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
-COMPILE = avr-g++ -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
+COMPILE = avr-g++ -w -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
 # -Wall -Wextra
 all: firmware_version.h main.hex
 
@@ -18,6 +20,9 @@ firmware_version.h:
 	python ./hg_hooks/versionheader.py
 
 .cpp.o:
+	$(COMPILE) -c $< -o $@
+
+.c.o:
 	$(COMPILE) -c $< -o $@
 
 .S.o:

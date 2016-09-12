@@ -12,37 +12,34 @@
 #define USE_GPS
 //#define USE_DHT
 
-typedef uint8_t byte;
-typedef uint16_t word;
-
 
 /* TODO Config options */
-char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
-volatile uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
-char HOPS = '9'; // '0'-'9'
-volatile uint16_t BROADCAST_INTERVAL = 120;
+extern char NODE_NAME[9]; // null-terminated string, max 8 bytes, A-z0-9
+extern uint8_t NODE_NAME_LEN;
+extern char HOPS; // '0'-'9'
+extern uint16_t BROADCAST_INTERVAL;
 
-volatile float LATITUDE  = NAN;
-volatile float LONGITUDE = NAN;
-volatile float ALTITUDE  = NAN;
+extern float LATITUDE;
+extern float LONGITUDE;
+extern float ALTITUDE;
 
-const byte PAYLOADSIZE = 64;
+const uint8_t PAYLOADSIZE = 64;
 
-volatile double vsense_offset = 0.74; // Seems like it depends on current usage. Jumps to 0.76V
-volatile double vsense_mult = 15.227;
+extern double vsense_offset;
+extern double vsense_mult;
 
-volatile bool vbat_enabled = true;
-volatile int    vbat_pin    = 0; // Analog pin A0
-volatile double vbat_offset = 0.023;
-volatile double vbat_mult   = 11.0;
+extern bool vbat_enabled;
+extern int    vbat_pin;
+extern double vbat_offset;
+extern double vbat_mult;
 
-volatile bool vpanel_enabled = true;
-volatile int    vpanel_pin    = 1; // Analog pin A1
-volatile double vpanel_offset = 0.330;
-volatile double vpanel_mult   = 11.1;
+extern bool   vpanel_enabled;
+extern int    vpanel_pin;
+extern double vpanel_offset;
+extern double vpanel_mult;
 
-volatile bool   powersave = true; // Allways assume powersave on boot.
-volatile double powersave_treshold = 3.0; // Treshold voltage in volts.
+extern bool   powersave;
+extern double powersave_treshold;
 
 
 

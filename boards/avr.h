@@ -1,6 +1,6 @@
 // TODO: This should probably be avr.h
-#ifndef boards_avr_h
-#define boards_avr_h
+#ifndef BOARDS_AVR_H
+#define BOARDS_AVR_H
 
 double getChipTemp();
 double getVCCVoltage();

@@ -4,10 +4,9 @@
 #define BUFFER_H
 
 const uint8_t BUFFERSIZE = 128;
-uint8_t databuf[BUFFERSIZE];
-uint8_t dataptr = 0;
+extern uint8_t databuf[BUFFERSIZE];
+extern uint8_t dataptr;
 
-char _floatbuf[16] = "";
 
 /* ------------------------------------------------------------------------- */
 // TODO:60 make all functions respect BUFFERSIZE.

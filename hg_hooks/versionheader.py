@@ -16,6 +16,7 @@ const char firmware_date[] = "{date}";
 #endif
 """
 
+import os
 import datetime
 import traceback
 
@@ -49,10 +50,12 @@ def generate(ui, repo, **kwargs):
         print(tags)
 
         variables['version'] = version
-        print(variables)
 
-        with open(VERSION_HEADER_FILE, "wb") as fh:
-            fh.write(TEMPLATE.format(**variables))
+        output = TEMPLATE.format(**variables)
+        if os.path.exists(VERSION_HEADER_FILE) and open(VERSION_HEADER_FILE, "rb").read() != output or not os.path.exists(VERSION_HEADER_FILE):
+            print(variables)
+            with open(VERSION_HEADER_FILE, "wb") as fh:
+                fh.write(output)
     except:
         traceback.print_exc()
         raise

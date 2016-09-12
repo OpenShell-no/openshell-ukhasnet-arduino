@@ -20,7 +20,7 @@ firmware_version.h::
 	python ./hg_hooks/versionheader.py
 
 # TODO: do the same for .c files
-$(BUILDDIR)/%.o: %.cpp
+$(BUILDDIR)/%.o: %.cpp firmware_version.h
 	@mkdir -p "$(@D)"
 	$(COMPILE) -c $< -o $@
 
@@ -42,6 +42,7 @@ $(ASSETS)/main.hex: $(BUILDDIR)/main.elf
 	avr-objcopy -j .text -j .data -O ihex $< $@
 
 $(ASSETS)/main.eep: $(BUILDDIR)/main.elf
+	@mkdir -p "$(@D)"
 	avr-objcopy -j .eeprom -O ihex $< $@
 
 .PHONY: clean

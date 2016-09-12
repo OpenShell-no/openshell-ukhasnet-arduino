@@ -40,6 +40,8 @@ unsigned long micros();
 void delay(unsigned long ms);
 void delayMicroseconds(unsigned int us);
 
+void start_timer();
+
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif

@@ -474,6 +474,8 @@ void loop() {
 
 int main() {
   sei(); // Enable interrupts
+  
+  start_timer();
 
   setup();
   while (true) {

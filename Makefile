@@ -1,24 +1,25 @@
 DEVICE  = m328p
 CLOCK		= 8000000
 
-BUILDDIR = ./build/
-ASSETS   = ./assets/
+BUILDDIR = ./build
+ASSETS   = ./assets
 
 LIBRARIES = ../libraries/ukhasnet-rfm69
 
 SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
-OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o ../libraries/ukhasnet-rfm69/spi_conf/spi_conf.o
+OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o ../libraries/ukhasnet-rfm69/spi_conf/atmega168/spi_conf.o
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
-COMPILE = avr-g++ -w -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
-# -Wall -Wextra
+COMPILE = avr-g++ -Wall -Wextra -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
+
 all: firmware_version.h $(ASSETS)/main.hex $(ASSETS)/main.eep
 
 # "::" means allways remake file.
 firmware_version.h::
 	python ./hg_hooks/versionheader.py
 
+# TODO: do the same for .c files
 $(BUILDDIR)/%.o: %.cpp
 	@mkdir -p "$(@D)"
 	$(COMPILE) -c $< -o $@

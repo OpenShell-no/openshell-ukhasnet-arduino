@@ -238,7 +238,7 @@ void delayMicroseconds(unsigned int us)
 	// return = 4 cycles
 }
 
-void init()
+void start_timer()
 {
 	// this needs to be called before setup() or some functions won't
 	// work there

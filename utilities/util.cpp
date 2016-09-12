@@ -2,6 +2,8 @@
 #include "util.h"
 #include "timer.h"
 
+unsigned long now;
+
 int freeRam ()
 {
   extern int __heap_start, *__brkval;

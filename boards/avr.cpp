@@ -5,7 +5,6 @@
 
 void yield() {} // TODO: yield should probably do something sane
 
-#ifdef USE_CPUTEMP
 double getChipTemp() {
   uint16_t wADC;
 
@@ -32,9 +31,7 @@ double getChipTemp() {
   // The offset of 324.31 could be wrong. It is just an indication.
   return (wADC - 244.31d) / 1.22d;
 }
-#endif
 
-#ifdef USE_CPUVCC
 double getVCCVoltage() {
   uint16_t wADC;
 
@@ -59,8 +56,6 @@ double getVCCVoltage() {
   wADC = ADCW;
   return wADC ? (1.1d * 1023) / wADC : -1;
 }
-#endif
-
 
 double readADCVoltage(uint8_t adc, double multiplier, double offset) {
     // ATmega328PB Datasheet: 29.9.1 - p321

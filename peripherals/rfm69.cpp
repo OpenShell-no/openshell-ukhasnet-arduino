@@ -1,7 +1,26 @@
 #include "rfm69.h"
 #include "../utilities/timer.h"
 
+#include <ukhasnet-rfm69-config.h>
+#include <ukhasnet-rfm69.h>
+
 #include "../config.h"
+
+uint8_t rfm_txpower = 20;
+float rfm_freq_trim = 0.068f;
+int16_t lastrssi = 0;
+
+#ifdef ESP8266
+  int rfm69_reset_pin = 15;
+  int rfm69_chipselect_pin = 0;
+#else
+  int rfm69_reset_pin = 9;      // ATMEGA328PB PB1=9
+  int rfm69_chipselect_pin = 8; // ATmega328PB PB0=8
+#endif
+
+
+long _freq;
+uint8_t freqbuf[3];
 
 void rfm69_reset() {
   /*
@@ -10,7 +29,7 @@ void rfm69_reset() {
     delay(100);
     digitalWrite(rfm69_reset_pin, LOW);
 */
-    spi_set_chipselect(rfm69_chipselect_pin);
+  //  spi_set_chipselect(rfm69_chipselect_pin);
 
     while(rf69_init() != RFM_OK) {
         delay(100);

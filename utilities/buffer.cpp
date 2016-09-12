@@ -4,6 +4,10 @@
 
 #include "buffer.h"
 
+uint8_t databuf[BUFFERSIZE];
+uint8_t dataptr = 0;
+
+char _floatbuf[16] = "";
 
 /* ------------------------------------------------------------------------- */
 // TODO:50 make all functions respect BUFFERSIZE.

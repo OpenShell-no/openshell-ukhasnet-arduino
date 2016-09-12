@@ -32,6 +32,8 @@ const bool HAS_GPS = false;
 #ifdef USE_RFM69
 const bool HAS_RFM69 = true;
 #include "peripherals/rfm69.h"
+#include <ukhasnet-rfm69-config.h>
+#include <ukhasnet-rfm69.h>
 #else
 const bool HAS_RFM69 = false;
 #endif
@@ -82,7 +84,7 @@ unsigned long ukhasnet_rxcount = 0;
 unsigned long ukhasnet_repeatcount = 0;
 
 unsigned long packet_count = 0;
-byte sequence = 0;
+uint8_t sequence = 0;
 
 void debug() {
   #ifdef SERIALDEBUG

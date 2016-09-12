@@ -5,10 +5,9 @@ BUILDDIR = ./build/
 ASSETS   = ./assets/
 
 LIBRARIES = ../libraries/ukhasnet-rfm69
-LIBRARYSOURCES = $(wildcard ../libraries/ukhasnet-rfm69/*.c) $(wildcard ../libraries/ukhasnet-rfm69/*/*.c)
 
-SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp) $(LIBRARYSOURCES)
-OBJECTS = $(SOURCES:.cpp=.o)
+SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
+OBJECTS = $(SOURCES:.cpp=.o) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o ../libraries/ukhasnet-rfm69/spi_conf/spi_conf.o
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
@@ -27,7 +26,6 @@ firmware_version.h:
 
 .S.o:
 	$(COMPILE) -x assembler-with-cpp -c $< -o $@
-
 
 
 main.elf: $(OBJECTS)

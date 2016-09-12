@@ -1,8 +1,21 @@
 #include <stdint.h>
 #include "../config.h"
 #include "../utilities/buffer.h"
-#include "gps.h"
 #include "../utilities/timer.h"
+#include "gps.h"
+
+gps_lock_t gps_lock = GPS_LOCK_UNKNOWN;
+
+
+unsigned long timer_lastgps = 0;
+bool timer_lastgps_enabled = false;
+bool do_sendgpsstatus = false;
+
+
+uint8_t _gpspos;
+float _gpsfloat;
+char _gpsbuf[17];
+gps_lock_t _gps_oldstatus = GPS_LOCK_UNKNOWN;
 
 void handleGPSString() {
     if (s_cmp((char*)databuf, "$GPGSA")) {

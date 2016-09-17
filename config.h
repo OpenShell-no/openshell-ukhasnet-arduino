@@ -19,6 +19,10 @@ extern uint8_t NODE_NAME_LEN;
 extern char HOPS; // '0'-'9'
 extern uint16_t BROADCAST_INTERVAL;
 
+extern uint8_t rfm_txpower;
+extern float rfm_freq;
+extern float rfm_freq_trim;
+
 extern float LATITUDE;
 extern float LONGITUDE;
 extern float ALTITUDE;

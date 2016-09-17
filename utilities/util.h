@@ -9,4 +9,21 @@ const unsigned long MAXULONG = 0xffffffff;
 extern unsigned long now;
 unsigned long getTimeSince(unsigned long ___start);
 
+
+
+/* ------------------------------------------------------------------------- */
+
+typedef enum base_t {NO_CONVERT=0, BIN=2, OCT=8,  DEC=10, HEX=16} base_t;
+
+const char* tostring(uint8_t n, base_t base=DEC);
+const char* tostring(uint16_t n, base_t base=DEC);
+const char* tostring(uint32_t n, base_t base=DEC);
+const char* tostring(uint64_t n, base_t base=DEC);
+
+const char* tostring(int8_t n, base_t base=DEC);
+const char* tostring(int16_t n, base_t base=DEC);
+const char* tostring(int32_t n, base_t base=DEC);
+const char* tostring(int64_t n, base_t base=DEC);
+
+/* ------------------------------------------------------------------------- */
 #endif

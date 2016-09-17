@@ -1,5 +1,6 @@
-DEVICE  = m328p
+DEVICE  = atmega328pb
 CLOCK		= 8000000
+SERIALPORT = COM33
 
 BUILDDIR = ./build
 ASSETS   = ./assets
@@ -11,7 +12,11 @@ OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
-COMPILE = avr-g++ -Wall -Wextra -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=atmega328p $(INCLUDES)
+COMPILE = avr-g++ -Wall -Wextra -w -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=$(DEVICE) $(INCLUDES)
+#AVRDUDE_CONF := avrdude.conf
+AVRDUDE = avrdude -C $(AVRDUDE_CONF) -c arduino -P $(SERIALPORT) -p $(DEVICE) -b 19200
+
+default: clean all
 
 all: firmware_version.h $(ASSETS)/main.hex $(ASSETS)/main.eep
 
@@ -45,8 +50,12 @@ $(ASSETS)/main.eep: $(BUILDDIR)/main.elf
 	@mkdir -p "$(@D)"
 	avr-objcopy -j .eeprom -O ihex $< $@
 
-.PHONY: clean
+.PHONY: clean upload auto
 clean:
-	rm -rv $(BUILDDIR) $(ASSETS)
+	@-rm -rv $(BUILDDIR) $(ASSETS)
+	@-rmdir /q /s "$(BUILDDIR)" "$(ASSETS)"
 
-#vpath %.o $(BUILDDIR)
+upload: $(ASSETS)/main.hex $(ASSETS)/main.eep
+	$(AVRDUDE) -U flash:w:$(ASSETS)/main.hex:i -U eeprom:w:$(ASSETS)/main.eep:i
+
+auto: clean all upload

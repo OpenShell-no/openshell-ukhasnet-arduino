@@ -11,6 +11,7 @@
 #include "utilities/util.h"
 #include "utilities/buffer.h"
 #include "utilities/timer.h"
+#include "utilities/uart.h"
 
 #if defined (AVR)
   #include "boards/avr.h"
@@ -62,7 +63,6 @@ const bool HAS_CPUVCC = true;
 #elif defined(ESP8266)
 const bool HAS_CPUTEMP = false;
 const bool HAS_CPUVCC = false;
-#define HAVE_HWSERIAL0
 #endif
 
 
@@ -88,8 +88,8 @@ uint8_t sequence = 0;
 
 void debug() {
   #ifdef SERIALDEBUG
-    Serial.print(F("Free RAM: "));
-    Serial.println(freeRam());
+    serial0_print(F("Free RAM: "));
+    serial0_println(tostring(freeRam()));
   #endif
 }
 
@@ -106,12 +106,12 @@ packet_source_t packet_source;
 
 
 void send() {
-#ifdef HAVE_HWSERIAL0
+#ifdef SERIAL0
     for (int i=0;i<dataptr;i++) {
-        Serial.write(databuf[i]);
+        serial0_write(databuf[i]);
     }
-    Serial.write("\r\n");
-    Serial.flush();
+    serial0_write("\r\n");
+    serial0_flush();
 #endif
 #ifdef USE_RFM69
     send_rfm69();
@@ -281,46 +281,46 @@ void sendOwn() {
 
 void setup() {
 
-#ifdef HAVE_HWSERIAL0
-    Serial.begin(115200);
-    Serial.println();
+#ifdef SERIAL0
+    serial0_init(115200);
+    serial0_println();
 
-    Serial.print(F("OpenShell UKHASnet Arduino firmware v"));
-    Serial.print(firmware_version);
-    Serial.print(' ');
-    Serial.println(firmware_date);
+    serial0_print("OpenShell UKHASnet Arduino firmware v");
+    serial0_print(firmware_version);
+    serial0_print(' ');
+    serial0_println(firmware_date);
 
-    Serial.print(F("Revision: "));
-    Serial.print(firmware_commit);
-    Serial.print('@');
-    Serial.println(firmware_branch);
+    serial0_print("Revision: ");
+    serial0_print(firmware_commit);
+    serial0_print('@');
+    serial0_println(firmware_branch);
 
-    Serial.print(F("Node: "));
-    Serial.println(NODE_NAME);
+    serial0_print("Node: ");
+    serial0_println(NODE_NAME);
 
     debug();
 
-    Serial.flush();
+    serial0_flush();
 #endif
 
 #ifdef USE_ONEWIRE
-#ifdef HAVE_HWSERIAL0
-    Serial.println(F("Scanning 1-wire bus..."));
+#ifdef SERIAL0
+    serial0_println("Scanning 1-wire bus...");
 #endif
     dstemp.begin();
     dstemp.setResolution(12);
-#ifdef HAVE_HWSERIAL0
-    Serial.print(F("1-wire devices: "));
-    Serial.print(dstemp.getDeviceCount(), DEC);
-    Serial.println();
-    Serial.print(F("1-wire parasite: "));
-    Serial.println(dstemp.isParasitePowerMode());
-    Serial.flush();
+#ifdef SERIAL0
+    serial0_print("1-wire devices: ");
+    serial0_print(dstemp.getDeviceCount(), DEC);
+    serial0_println();
+    serial0_print("1-wire parasite: ");
+    serial0_println(dstemp.isParasitePowerMode());
+    serial0_flush();
 #endif
     if (!dstemp.getAddress(dsaddr, 0)) {
-#ifdef HAVE_HWSERIAL0
-        Serial.println("WARNING: 1-wire: Unable to find temperature device");
-        Serial.flush();
+#ifdef SERIAL0
+        serial0_println("WARNING: 1-wire: Unable to find temperature device");
+        serial0_flush();
 #endif
     }
 
@@ -330,22 +330,22 @@ void setup() {
     rfm69_reset();
 
     for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
-    #ifdef HAVE_HWSERIAL0
-        Serial.print("Setting ");
-        Serial.print(CONFIG[i][0], HEX);
-        Serial.print(" = ");
-        Serial.println(CONFIG[i][1], HEX);
+    #ifdef SERIAL0
+        serial0_print("Setting 0x");
+        serial0_print(tostring(CONFIG[i][0], HEX));
+        serial0_print(" = 0x");
+        serial0_println(tostring(CONFIG[i][1], HEX));
     #endif
     }
     //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
 
-#ifdef HAVE_HWSERIAL0
-    Serial.println(F("Radio started."));
+#ifdef SERIAL0
+    serial0_println("Radio started.");
 
     dump_rfm69_registers();
 
-    Serial.flush();
-    rfm69_set_frequency(869.5f);
+    serial0_flush();
+    rfm69_set_frequency(rfm_freq);
 #endif
 #endif
     sendOwn();
@@ -365,8 +365,8 @@ bool packet_received;
 // packet_source_t packet_source;
 
 void handleUKHASNETPacket() {
-#ifdef HAVE_HWSERIAL0
-    Serial.println("handleUKHASNETPacket");
+#ifdef SERIAL0
+    serial0_println("handleUKHASNETPacket");
 #endif
     ukhasnet_rxcount++;
     path_start = 0;
@@ -401,12 +401,12 @@ void handleUKHASNETPacket() {
 
 
 void handlePacket() {
-#ifdef HAVE_HWSERIAL0
-    Serial.print("handlePacket ");
-    Serial.write(databuf[0]);
-    Serial.write(databuf[1]);
-    //Serial.write(databuf[dataptr]);
-    Serial.println();
+#ifdef SERIAL0
+    serial0_print("handlePacket ");
+    serial0_write(databuf[0]);
+    serial0_write(databuf[1]);
+    //serial0_write(databuf[dataptr]);
+    serial0_println();
 #endif
     if (databuf[0] >= '0' and
         databuf[0] <= '9' and
@@ -426,16 +426,16 @@ void handleRX() {
         rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
         if (packet_received) {
             packet_source = SOURCE_RFM;
-            #ifdef HAVE_HWSERIAL0
-            Serial.println(packet_received);
+            #ifdef SERIAL0
+            serial0_println(packet_received);
             #endif
             handlePacket();
         }
     }
 #endif
 #ifdef SERIALDEBUG
-    if (Serial.available()) {
-        dataptr = Serial.readBytesUntil('\n', databuf, BUFFERSIZE);
+    if (serial0_available()) {
+        dataptr = serial0_readBytesUntil('\n', databuf, BUFFERSIZE);
         packet_source = SOURCE_SERIAL;
         handlePacket();
     }
@@ -473,12 +473,16 @@ void loop() {
 /* ------------------------------------------------------------------------- */
 
 int main() {
-  sei(); // Enable interrupts
+  DDRD |= 1<<2; // pinMode(PB2, OUTPUT);
+  PORTD |= 1<<2; // digitalWrite(PB2, ON);
   
+  sei(); // Enable interrupts
+
   start_timer();
 
   setup();
   while (true) {
+    PORTD ^= 1<<2;
     loop();
   }
   return 0;

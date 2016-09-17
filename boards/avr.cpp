@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include "../config.h"
 #include "../utilities/timer.h"
+#include "../utilities/uart.h"
 
 void yield() {} // TODO: yield should probably do something sane
 
@@ -77,4 +78,37 @@ double readADCVoltage(uint8_t adc, double multiplier, double offset) {
     //return wADC ? wADC / 1024.0d * 1.1d: -1;
     //return wADC ? wADC / 1024.0d * 1.1d * (12.76/0.818555): -1;
     return wADC ? (((wADC / 1024.0d) * 1.1d) * multiplier) + offset : -1;
+}
+
+
+void serial0_init(unsigned long baud) {
+
+  UCSR0A = UCSR0A | (1 << U2X0); // Enable double speed
+  UBRR0 = (uint16_t)((double)F_CPU / (8 * baud) - 0.5); // Set baudrate
+
+  /* Enable receiver and transmitter */
+  UCSR0B = (1<<RXEN0)|(1<<TXEN0); // Enable peripheral
+
+  /* Set frame format: 8data, 2stop bit */
+  UCSR0C = (1<<USBS0)|(3<<UCSZ00); // 8N2
+}
+
+void serial0_flush() {
+  /* Wait for empty transmit buffer */
+  while ( !( UCSR0A & (1<<UDRE0)) ) {}
+}
+
+size_t serial0_write(char data) {
+  while ( !( UCSR0A & (1<<UDRE0)) ) {} // serial0_flush();
+  UDR0 = data;
+  return 1;
+}
+
+char serial0_read() {
+  while ( !(UCSR0A & (1<<RXC0)) ) {} // while not serial0_available();
+  return UDR0;
+}
+
+bool serial0_available() {
+  return UCSR0A & (1<<RXC0);
 }

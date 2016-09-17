@@ -8,7 +8,12 @@ typedef uint16_t word;
 char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
 char HOPS = '9'; // '0'-'9'
+
 uint16_t BROADCAST_INTERVAL = 120;
+
+uint8_t rfm_txpower = 20;
+float rfm_freq = 869.5f;
+float rfm_freq_trim = 0.068f;
 
 float LATITUDE  = NAN;
 float LONGITUDE = NAN;

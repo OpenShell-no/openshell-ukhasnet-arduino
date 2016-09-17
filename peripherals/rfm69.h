@@ -5,8 +5,6 @@
 
 #include "../utilities/buffer.h"
 
-extern uint8_t rfm_txpower;
-extern float rfm_freq_trim;
 extern int16_t lastrssi;
 extern int rfm69_reset_pin;
 extern int rfm69_chipselect_pin;

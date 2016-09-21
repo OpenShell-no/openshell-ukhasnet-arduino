@@ -1,5 +1,5 @@
 DEVICE  = atmega328pb
-CLOCK		= 8000000
+CLOCK	  = 8000000
 SERIALPORT = COM33
 
 BUILDDIR = ./build
@@ -8,7 +8,7 @@ ASSETS   = ./assets
 LIBRARIES = ../libraries/ukhasnet-rfm69
 
 SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
-OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o ../libraries/ukhasnet-rfm69/spi_conf/atmega168/spi_conf.o
+OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
@@ -28,6 +28,10 @@ firmware_version.h::
 $(BUILDDIR)/%.o: %.cpp firmware_version.h
 	@mkdir -p "$(@D)"
 	$(COMPILE) -c $< -o $@
+
+#$(BUILDDIR)/%.o: %.c firmware_version.h
+#	@mkdir -p "$(@D)"
+#	$(COMPILE) -c $< -o $@
 
 .c.o:
 	$(COMPILE) -c $< -o $@

@@ -475,10 +475,11 @@ void loop() {
 int main() {
   DDRD |= 1<<2; // pinMode(PB2, OUTPUT);
   PORTD |= 1<<2; // digitalWrite(PB2, ON);
-  
+
   sei(); // Enable interrupts
 
   start_timer();
+  delay(1000);
 
   setup();
   while (true) {

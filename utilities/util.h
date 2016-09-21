@@ -25,5 +25,8 @@ const char* tostring(int16_t n, base_t base=DEC);
 const char* tostring(int32_t n, base_t base=DEC);
 const char* tostring(int64_t n, base_t base=DEC);
 
+const char* tostring(float n, uint8_t precission = 2, bool strip=true);
+const char* tostring(double n, uint8_t precission = 2, bool strip=true);
+
 /* ------------------------------------------------------------------------- */
 #endif

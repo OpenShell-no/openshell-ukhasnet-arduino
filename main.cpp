@@ -145,7 +145,7 @@ void sendPositionStatus() {
     serial0_println(F("DBG:sendPositionStatus"));
     resetData();
 
-    addByte(HOPS);
+    addByte(hops);
     addByte(sequence+97);
 
     switch (gps_lock) {
@@ -157,24 +157,24 @@ void sendPositionStatus() {
             break;
         case GPS_LOCK_2D:
             addByte('L');
-            addFloat(LATITUDE, 5);
+            addFloat(latitude, 5);
             addByte(',');
-            addFloat(LONGITUDE, 5);
+            addFloat(longitude, 5);
             addString(":2D GPS Lock");
             break;
         case GPS_LOCK_3D:
             addByte('L');
-            addFloat(LATITUDE, 5);
+            addFloat(latitude, 5);
             addByte(',');
-            addFloat(LONGITUDE, 5);
+            addFloat(longitude, 5);
             addByte(',');
-            addFloat(ALTITUDE, 1);
+            addFloat(altitude, 1);
             addString(":3D GPS Lock");
             break;
     }
 
     addByte('[');
-    addString(NODE_NAME);
+    addString(node_name);
     addByte(']');
 
     send();
@@ -188,7 +188,7 @@ void sendOwn() {
 
     resetData();
 
-    addByte(HOPS);
+    addByte(hops);
     addByte(sequence+97);
 
     addByte('V');
@@ -243,17 +243,17 @@ void sendOwn() {
     switch (gps_lock) {
         case GPS_LOCK_2D:
             addByte('L');
-            addFloat(LATITUDE, 5);
+            addFloat(latitude, 5);
             addByte(',');
-            addFloat(LONGITUDE, 5);
+            addFloat(longitude, 5);
             break;
         case GPS_LOCK_3D:
             addByte('L');
-            addFloat(LATITUDE, 5);
+            addFloat(latitude, 5);
             addByte(',');
-            addFloat(LONGITUDE, 5);
+            addFloat(longitude, 5);
             addByte(',');
-            addFloat(ALTITUDE, 0);
+            addFloat(altitude, 0);
             break;
     }
 
@@ -268,7 +268,7 @@ void sendOwn() {
     }
 
     addByte('[');
-    addString(NODE_NAME);
+    addString(node_name);
     addByte(']');
 
 
@@ -300,7 +300,7 @@ void setup() {
     serial0_println(firmware_branch);
 
     serial0_print(F("Node: "));
-    serial0_println(NODE_NAME);
+    serial0_println(node_name);
 
     debug();
 
@@ -378,10 +378,10 @@ void handleUKHASNETPacket() {
     has_repeated = false;
     for (uint8_t i=0; i<dataptr; i++) {
         if (databuf[i] == '[' || databuf[i] == ',' || databuf[i] == ']') {
-            if (path_start && (i - path_start == NODE_NAME_LEN) && !has_repeated) {
+            if (path_start && (i - path_start == node_name_len) && !has_repeated) {
                 has_repeated = true;
-                for (uint8_t j=0; j<NODE_NAME_LEN; j++) {
-                    if (databuf[path_start+j] != NODE_NAME[j]) {
+                for (uint8_t j=0; j<node_name_len; j++) {
+                    if (databuf[path_start+j] != node_name[j]) {
                         has_repeated = false;
                     }
                 }
@@ -395,7 +395,7 @@ void handleUKHASNETPacket() {
     if (!has_repeated and --databuf[0] >= '0') {
         dataptr = path_end;
         addByte(',');
-        addCharArray(NODE_NAME, NODE_NAME_LEN);
+        addCharArray(node_name, node_name_len);
         addByte(']');
         delay(rand() % 601);
         send();
@@ -465,7 +465,7 @@ void loop() {
         timer_lastgps_enabled = false;
     }
 
-    if (getTimeSince(timer_sendown) >= (BROADCAST_INTERVAL * 1000)) {
+    if (getTimeSince(timer_sendown) >= (broadcast_interval * 1000)) {
         timer_sendown = millis();
         sendOwn();
     }

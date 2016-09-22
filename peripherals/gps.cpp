@@ -44,46 +44,46 @@ void handleGPSString() {
         timer_lastgps_enabled = true;
         if (gps_lock == GPS_LOCK_2D or gps_lock == GPS_LOCK_3D) {
             _gpspos = c_find(',', 2);
-            LATITUDE = (databuf[_gpspos] - 48) * 10;
-            LATITUDE += databuf[_gpspos + 1] - 48;
+            latitude = (databuf[_gpspos] - 48) * 10;
+            latitude += databuf[_gpspos + 1] - 48;
             s_sub((char*)databuf, _gpsbuf, _gpspos+2, c_find(_gpspos, ',')-1);
             _gpsfloat = parse_float(_gpsbuf);
-            LATITUDE += _gpsfloat / 60; // TODO: Handle N/S
+            latitude += _gpsfloat / 60; // TODO: Handle N/S
 
             _gpspos = c_find(',', 3);
             s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
 
             if (_gpsbuf[0] == 'S') {
-                LATITUDE *= -1;
+                latitude *= -1;
             }
             //Serial.print("Latitude: "); // FIXME: Implement printing
-            //Serial.println(LATITUDE);
+            //Serial.println(latitude);
 
 
 
             _gpspos = c_find(',', 4);
-            LONGITUDE = parse_float((char*)&databuf[_gpspos], 3);
-            //LONGITUDE = (databuf[_gpspos + 1] - 48) * 10;
-            //LONGITUDE += databuf[_gpspos + 2] - 48;
+            longitude = parse_float((char*)&databuf[_gpspos], 3);
+            //longitude = (databuf[_gpspos + 1] - 48) * 10;
+            //longitude += databuf[_gpspos + 2] - 48;
             s_sub((char*)databuf, _gpsbuf, _gpspos+3, c_find(_gpspos, ',')-1);
             _gpsfloat = parse_float(_gpsbuf);
-            LONGITUDE += _gpsfloat / 60; // TODO: Handle N/S
+            longitude += _gpsfloat / 60; // TODO: Handle N/S
 
             _gpspos = c_find(',', 5);
             s_sub((char*)databuf, _gpsbuf, _gpspos, c_find(_gpspos, ',')-1);
 
             if (_gpsbuf[0] == 'W') {
-                LONGITUDE *= -1;
+                longitude *= -1;
             }
             //Serial.print("Longitude: "); // FIXME: Implement printing
-            //Serial.println(LONGITUDE);
+            //Serial.println(longitude);
         }
 
         if (gps_lock == GPS_LOCK_3D) {
             _gpspos = c_find(',', 9);
-            ALTITUDE = parse_float((char*)&databuf[_gpspos], c_find(_gpspos, ',')-1-_gpspos);
+            altitude = parse_float((char*)&databuf[_gpspos], c_find(_gpspos, ',')-1-_gpspos);
             //Serial.print("Altitude: "); // FIXME: Implement printing
-            //Serial.println(ALTITUDE);
+            //Serial.println(altitude);
         }
 
         if (_gps_oldstatus != gps_lock) {

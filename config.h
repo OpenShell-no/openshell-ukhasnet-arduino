@@ -14,18 +14,18 @@
 
 
 /* TODO Config options */
-extern char NODE_NAME[9]; // null-terminated string, max 8 bytes, A-z0-9
-extern uint8_t NODE_NAME_LEN;
-extern char HOPS; // '0'-'9'
-extern uint16_t BROADCAST_INTERVAL;
+extern char node_name[9]; // null-terminated string, max 8 bytes, A-z0-9
+extern uint8_t node_name_len;
+extern char hops; // '0'-'9'
+extern uint16_t broadcast_interval;
 
 extern uint8_t rfm_txpower;
 extern float rfm_freq;
 extern float rfm_freq_trim;
 
-extern float LATITUDE;
-extern float LONGITUDE;
-extern float ALTITUDE;
+extern float latitude;
+extern float longitude;
+extern float altitude;
 
 const uint8_t PAYLOADSIZE = 64;
 

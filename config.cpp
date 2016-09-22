@@ -5,19 +5,19 @@ typedef uint16_t word;
 
 
 /* TODO Config options */
-char NODE_NAME[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
-uint8_t NODE_NAME_LEN = strlen(NODE_NAME);
-char HOPS = '9'; // '0'-'9'
+char node_name[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
+uint8_t node_name_len = strlen(node_name);
+char hops = '9'; // '0'-'9'
 
-uint16_t BROADCAST_INTERVAL = 120;
+uint16_t broadcast_interval = 120;
 
 uint8_t rfm_txpower = 20;
 float rfm_freq = 869.5f;
 float rfm_freq_trim = 0.068f;
 
-float LATITUDE  = NAN;
-float LONGITUDE = NAN;
-float ALTITUDE  = NAN;
+float latitude  = NAN;
+float longitude = NAN;
+float altitude  = NAN;
 
 double vsense_offset = 0.74; // Seems like it depends on current usage. Jumps to 0.76V
 double vsense_mult = 15.227;

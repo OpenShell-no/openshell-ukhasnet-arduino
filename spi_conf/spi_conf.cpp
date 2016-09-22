@@ -61,10 +61,12 @@ rfm_status_t spi_init(void)
  */
 rfm_status_t spi_exchange_single(const rfm_reg_t out, rfm_reg_t* in)
 {
+    PORTD |= _BV(3);
     SPDR = out;
     while(!(SPSR & (1<<SPIF)));
     *in = SPDR;
     return RFM_OK;
+    PORTD &= ~(_BV(3));
 }
 
 /**

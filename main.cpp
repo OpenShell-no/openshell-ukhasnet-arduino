@@ -87,7 +87,7 @@ unsigned long packet_count = 0;
 uint8_t sequence = 0;
 
 void debug() {
-  #ifdef SERIALDEBUG
+  #ifdef SERIAL0
     serial0_print(F("Free RAM: "));
     serial0_println(tostring(freeRam()));
   #endif
@@ -106,6 +106,7 @@ packet_source_t packet_source;
 
 
 void send() {
+  serial0_println(F("DBG:send"));
 #ifdef SERIAL0
     for (int i=0;i<dataptr;i++) {
         serial0_write(databuf[i]);
@@ -141,6 +142,7 @@ void bumpSequence() {
 
 
 void sendPositionStatus() {
+    serial0_println(F("DBG:sendPositionStatus"));
     resetData();
 
     addByte(HOPS);
@@ -181,6 +183,7 @@ void sendPositionStatus() {
 
 
 void sendOwn() {
+    serial0_println(F("DBG:sendOwn"));
     debug();
 
     resetData();
@@ -280,22 +283,23 @@ void sendOwn() {
 
 
 void setup() {
+  serial0_println("DBG:setup");
 
 #ifdef SERIAL0
     serial0_init(115200);
     serial0_println();
 
-    serial0_print("OpenShell UKHASnet Arduino firmware v");
+    serial0_print(F("OpenShell UKHASnet Arduino firmware v"));
     serial0_print(firmware_version);
     serial0_print(' ');
     serial0_println(firmware_date);
 
-    serial0_print("Revision: ");
+    serial0_print(F("Revision: "));
     serial0_print(firmware_commit);
     serial0_print('@');
     serial0_println(firmware_branch);
 
-    serial0_print("Node: ");
+    serial0_print(F("Node: "));
     serial0_println(NODE_NAME);
 
     debug();
@@ -305,21 +309,21 @@ void setup() {
 
 #ifdef USE_ONEWIRE
 #ifdef SERIAL0
-    serial0_println("Scanning 1-wire bus...");
+    serial0_println(F("Scanning 1-wire bus..."));
 #endif
     dstemp.begin();
     dstemp.setResolution(12);
 #ifdef SERIAL0
-    serial0_print("1-wire devices: ");
+    serial0_print(F("1-wire devices: "));
     serial0_print(dstemp.getDeviceCount(), DEC);
     serial0_println();
-    serial0_print("1-wire parasite: ");
+    serial0_print(F("1-wire parasite: "));
     serial0_println(dstemp.isParasitePowerMode());
     serial0_flush();
 #endif
     if (!dstemp.getAddress(dsaddr, 0)) {
 #ifdef SERIAL0
-        serial0_println("WARNING: 1-wire: Unable to find temperature device");
+        serial0_println(F("WARNING: 1-wire: Unable to find temperature device"));
         serial0_flush();
 #endif
     }
@@ -331,16 +335,16 @@ void setup() {
 
     for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
     #ifdef SERIAL0
-        serial0_print("Setting 0x");
+        serial0_print(F("Setting 0x"));
         serial0_print(tostring(CONFIG[i][0], HEX));
-        serial0_print(" = 0x");
+        serial0_print(F(" = 0x"));
         serial0_println(tostring(CONFIG[i][1], HEX));
     #endif
     }
     //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
 
 #ifdef SERIAL0
-    serial0_println("Radio started.");
+    serial0_println(F("Radio started."));
 
     dump_rfm69_registers();
 
@@ -366,7 +370,7 @@ bool packet_received;
 
 void handleUKHASNETPacket() {
 #ifdef SERIAL0
-    serial0_println("handleUKHASNETPacket");
+    serial0_println(F("handleUKHASNETPacket"));
 #endif
     ukhasnet_rxcount++;
     path_start = 0;
@@ -402,7 +406,7 @@ void handleUKHASNETPacket() {
 
 void handlePacket() {
 #ifdef SERIAL0
-    serial0_print("handlePacket ");
+    serial0_print(F("handlePacket "));
     serial0_write(databuf[0]);
     serial0_write(databuf[1]);
     //serial0_write(databuf[dataptr]);
@@ -421,6 +425,7 @@ void handlePacket() {
 }
 
 void handleRX() {
+  //serial0_println(F("handleRX"));
 #ifdef USE_RFM69
     if (not powersave) {
         rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
@@ -473,8 +478,13 @@ void loop() {
 /* ------------------------------------------------------------------------- */
 
 int main() {
-  DDRD |= 1<<2; // pinMode(PB2, OUTPUT);
-  PORTD |= 1<<2; // digitalWrite(PB2, ON);
+  DDRD |= _BV(2); // pinMode(PB2, OUTPUT);
+  DDRD |= _BV(3);
+  DDRD |= _BV(6);
+  DDRD |= _BV(7);
+
+  PORTD |= _BV(2); // digitalWrite(PB2, ON);
+
 
   sei(); // Enable interrupts
 
@@ -482,8 +492,9 @@ int main() {
   delay(1000);
 
   setup();
+  serial0_println(F("DBG:Entering main loop."));
   while (true) {
-    PORTD ^= 1<<2;
+    PORTD ^= _BV(2);
     loop();
   }
   return 0;

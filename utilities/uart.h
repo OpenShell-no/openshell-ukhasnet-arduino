@@ -1,7 +1,15 @@
 #include <string.h>
+#include <avr/pgmspace.h>
 
 #ifndef UTILITIES_UART_H
 #define UTILITIES_UART_H
+
+/* ------------------------------------------------------------------------- */
+// From Arduino's WString.h
+class __FlashStringHelper;
+#define F(string_literal) (reinterpret_cast<const __FlashStringHelper *>(PSTR(string_literal)))
+/* ------------------------------------------------------------------------- */
+
 
 //Helper functions
 size_t serial0_write(const char buf[]);
@@ -9,10 +17,12 @@ size_t serial0_write(const char buf[], size_t count);
 
 size_t serial0_print(char c);
 size_t serial0_print(const char buf[]);
+size_t serial0_print(const __FlashStringHelper *ifsh);
 
 size_t serial0_println();
 size_t serial0_println(char c);
 size_t serial0_println(const char buf[]);
+size_t serial0_println(const __FlashStringHelper *ifsh);
 
 
 

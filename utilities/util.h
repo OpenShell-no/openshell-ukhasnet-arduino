@@ -10,7 +10,6 @@ extern unsigned long now;
 unsigned long getTimeSince(unsigned long ___start);
 
 
-
 /* ------------------------------------------------------------------------- */
 
 typedef enum base_t {NO_CONVERT=0, BIN=2, OCT=8,  DEC=10, HEX=16} base_t;

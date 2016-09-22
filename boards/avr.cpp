@@ -6,7 +6,15 @@
 
 void yield() {} // TODO: yield should probably do something sane
 
+int freeRam ()
+{
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
 double getChipTemp() {
+  serial0_println(F("DBG:getChipTemp"));
   uint16_t wADC;
 
   // Set the internal reference and mux.
@@ -34,6 +42,7 @@ double getChipTemp() {
 }
 
 double getVCCVoltage() {
+  //serial0_println(F("DBG:getVCCVoltage"));
   uint16_t wADC;
 
   // Set the internal reference and mux.
@@ -59,6 +68,7 @@ double getVCCVoltage() {
 }
 
 double readADCVoltage(uint8_t adc, double multiplier, double offset) {
+    serial0_println(F("DBG:readADCVoltage"));
     // ATmega328PB Datasheet: 29.9.1 - p321
     // Measures relative to 1.1V Reference, any value above will be 1024
     uint16_t wADC;

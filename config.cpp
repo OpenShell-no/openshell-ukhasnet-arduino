@@ -22,15 +22,22 @@ float altitude  = NAN;
 double vsense_offset = 0.74; // Seems like it depends on current usage. Jumps to 0.76V
 double vsense_mult = 15.227;
 
-bool vbat_enabled = true;
+bool vbat_enabled = false;
 int    vbat_pin    = 0; // Analog pin A0
 double vbat_offset = 0.023;
 double vbat_mult   = 11.0;
 
-bool vpanel_enabled = true;
+bool vpanel_enabled = false;
 int    vpanel_pin    = 1; // Analog pin A1
 double vpanel_offset = 0.330;
 double vpanel_mult   = 11.1;
 
 bool   powersave = true; // Allways assume powersave on boot.
 double powersave_treshold = 3.0; // Treshold voltage in volts.
+
+bme280_config_t bme280_cfg = {
+  true,
+  {true, 5},
+  {true, 5},
+  {true, 5}
+};

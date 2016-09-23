@@ -3,6 +3,7 @@
 #include "../config.h"
 #include "../utilities/timer.h"
 #include "../utilities/uart.h"
+#include "../utilities/spi.h"
 
 void yield() {} // TODO: yield should probably do something sane
 
@@ -12,6 +13,8 @@ int freeRam ()
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
+
+/* ------------------------------------------------------------------------- */
 
 double getChipTemp() {
   serial0_println(F("DBG:getChipTemp"));
@@ -90,6 +93,7 @@ double readADCVoltage(uint8_t adc, double multiplier, double offset) {
     return wADC ? (((wADC / 1024.0d) * 1.1d) * multiplier) + offset : -1;
 }
 
+/* ------------------------------------------------------------------------- */
 
 void serial0_init(unsigned long baud) {
 
@@ -121,4 +125,45 @@ char serial0_read() {
 
 bool serial0_available() {
   return UCSR0A & (1<<RXC0);
+}
+
+/* ------------------------------------------------------------------------- */
+
+#ifndef SPSR
+  #warning "SPxR are now defined SPxR0"
+  #define SPSR SPSR0
+  #define SPDR SPDR0
+  #define SPCR SPCR0
+#endif
+
+void spi0_init(uint32_t speed, spi_mode_t mode, spi_order_t order) {
+  /* Set up the SPI IO as appropriate */
+  DDRB |= _BV(2) | _BV(3) | _BV(5); // CS0 | MOSI | SCK
+  DDRB &= ~(_BV(4)); // MISO
+
+  /* Set SS high */
+  PORTB |= _BV(2); // CS0
+
+  /* SPI should be mode (0,0), MSB first, double clock rate*/
+  SPCR &= ~(_BV(CPOL) | _BV(CPHA) | _BV(DORD)); // Clear relevant bits
+  SPCR |= mode << CPHA | order << DORD; // Set the desired bits
+
+  /* TODO: Implement speed */
+  SPSR |= _BV(SPI2X);
+
+  /* Become master */
+  SPCR |= _BV(MSTR);
+
+  /* Finally, enable the SPI periph */
+  SPCR |= _BV(SPE);
+}
+
+uint8_t spi0_exchange(uint8_t val) {
+  PORTD |= _BV(3);
+  SPDR = val;
+
+  while(!(SPSR & _BV(SPIF))) {}
+
+  PORTD &= ~(_BV(3));
+  return SPDR;
 }

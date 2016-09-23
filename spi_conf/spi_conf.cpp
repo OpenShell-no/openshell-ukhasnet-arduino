@@ -18,6 +18,7 @@
 
 #include "ukhasnet-rfm69.h"
 #include "spi_conf.h"
+#include "../utilities/spi.h"
 
 /**
  * User SPI setup function. Use this function to set up the SPI peripheral
@@ -27,26 +28,7 @@
  */
 rfm_status_t spi_init(void)
 {
-    #ifdef SPI_HWSS
-      SPI_DDR  |= SPI_HWSS;
-      SPI_PORT |= SPI_HWSS;
-    #endif
-    /* Set up the SPI IO as appropriate */
-    SPI_DDR |= SPI_SS | SPI_MOSI | SPI_SCK;
-    SPI_DDR &= ~(SPI_MISO);
-
-    /* Set SS high */
-    SPI_PORT |= SPI_SS;
-
-    /* SPI should be mode (0,0), MSB first, double clock rate*/
-    SPCR &= ~(_BV(CPOL) | _BV(CPHA) | _BV(DORD));
-    SPSR |= _BV(SPI2X);
-
-    /* Become master */
-    SPCR |= _BV(MSTR);
-
-    /* Finally, enable the SPI periph */
-    SPCR |= _BV(SPE);
+    spi0_init(8000000);
 
     /* Return RFM_OK if everything went ok, otherwise RFM_FAIL */
     return RFM_OK;
@@ -61,12 +43,8 @@ rfm_status_t spi_init(void)
  */
 rfm_status_t spi_exchange_single(const rfm_reg_t out, rfm_reg_t* in)
 {
-    PORTD |= _BV(3);
-    SPDR = out;
-    while(!(SPSR & (1<<SPIF)));
-    *in = SPDR;
+    *in = spi0_exchange(out);
     return RFM_OK;
-    PORTD &= ~(_BV(3));
 }
 
 /**
@@ -74,6 +52,7 @@ rfm_status_t spi_exchange_single(const rfm_reg_t out, rfm_reg_t* in)
  */
 rfm_status_t spi_ss_assert(void)
 {
+    SPI_DDR  |= SPI_SS;
     SPI_PORT &= ~(SPI_SS);
     return RFM_OK;
 }
@@ -83,6 +62,7 @@ rfm_status_t spi_ss_assert(void)
  */
 rfm_status_t spi_ss_deassert(void)
 {
-    SPI_PORT |= (SPI_SS);
+    SPI_DDR  |= SPI_SS;
+    SPI_PORT |= SPI_SS;
     return RFM_OK;
 }

@@ -55,6 +55,13 @@ const bool HAS_DHT = true;
 const bool HAS_DHT = false;
 #endif
 
+#ifdef USE_BME280
+const bool HAS_BME280 = true;
+#include "peripherals/bme280.h"
+#else
+const bool HAS_BME280 = false;
+#endif
+
 #if defined(AVR)
 #define USE_CPUTEMP
 #define USE_CPUVCC
@@ -206,21 +213,43 @@ void sendOwn() {
     }
     //addFloat(getBatteryVoltage());
 
-    if (HAS_CPUTEMP or HAS_ONEWIRE or HAS_DHT) { // and *_enabled
-    addByte('T');
-#ifdef USE_CPUTEMP
-    addFloat(getChipTemp());
-#endif
-#ifdef USE_ONEWIRE
-    if (voltage > 2.75) {
-        double temp = getDSTemp();
-        if (temp != 85) {
+    #ifdef USE_BME280
+      if (bme280_cfg.enabled) {
+        bme280_sample();
+      }
+    #endif
+    if (HAS_CPUTEMP | HAS_BME280) { // and *_enabled | HAS_DHT | HAS_ONEWIRE
+      addByte('T');
+      #ifdef USE_CPUTEMP
+        addFloat(getChipTemp());
+      #endif
+      #ifdef USE_BME280
+        if (bme280_cfg.enabled & bme280_cfg.temperature.enabled) {
+          addByte(',');
+          addFloat(bme280_temperature(), 2);
+        }
+      #endif
+
+      #ifdef USE_ONEWIRE
+        if (voltage > 2.75) {
+          double temp = getDSTemp();
+          if (temp != 85) {
             addByte(',');
             addFloat(getDSTemp(), 3);
+          }
         }
+      #endif
     }
-#endif
-    }
+    #ifdef USE_BME280
+      if (bme280_cfg.enabled & bme280_cfg.pressure.enabled) {
+        addByte('P');
+        addFloat(bme280_pressure(), 1);
+      }
+      if (bme280_cfg.enabled & bme280_cfg.humidity.enabled) {
+        addByte('H');
+        addFloat(bme280_humidity(), 1);
+      }
+    #endif
     /* Need addString(str(long))
     addByte('C');
     addLong(ukhasnet_rxcount);
@@ -305,6 +334,10 @@ void setup() {
     debug();
 
     serial0_flush();
+#endif
+
+#ifdef USE_BME280
+    bme280_init();
 #endif
 
 #ifdef USE_ONEWIRE
@@ -405,6 +438,7 @@ void handleUKHASNETPacket() {
 
 
 void handlePacket() {
+
 #ifdef SERIAL0
     serial0_print(F("handlePacket "));
     serial0_write(databuf[0]);

@@ -11,6 +11,7 @@
 // FIXME: USE_GPS is not optional yet, code needs to be fixed.
 #define USE_GPS
 //#define USE_DHT
+#define USE_BME280
 
 
 /* TODO Config options */
@@ -45,7 +46,15 @@ extern double vpanel_mult;
 extern bool   powersave;
 extern double powersave_treshold;
 
+struct bme280_config_t {
+  bool enabled:1;
+  struct {
+    bool enabled:1;
+    uint8_t oversampling:3;
+  } temperature, pressure, humidity;
+};
 
+extern bme280_config_t bme280_cfg;
 
 // TODO:40 Implement configuration protocol.
 /* EEPROM SETTINGS

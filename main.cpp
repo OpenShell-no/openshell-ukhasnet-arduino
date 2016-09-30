@@ -218,6 +218,12 @@ void sendOwn() {
         bme280_sample();
       }
     #endif
+    #ifdef USE_DHT
+      if (dht_cfg.enabled) {
+        dht_sample();
+      }
+    #endif
+
     if (HAS_CPUTEMP | HAS_BME280) { // and *_enabled | HAS_DHT | HAS_ONEWIRE
       addByte('T');
       #ifdef USE_CPUTEMP
@@ -227,6 +233,12 @@ void sendOwn() {
         if (bme280_cfg.enabled & bme280_cfg.temperature.enabled) {
           addByte(',');
           addFloat(bme280_temperature(), 2);
+        }
+      #endif
+      #ifdef USE_DHT
+        if (dht_cfg.enabled & dht_cfg.temperature.enabled & dht_lastresult) {
+          addByte(',');
+          addFloat(dht_temperature(), 2);
         }
       #endif
 
@@ -245,10 +257,20 @@ void sendOwn() {
         addByte('P');
         addFloat(bme280_pressure(), 1);
       }
-      if (bme280_cfg.enabled & bme280_cfg.humidity.enabled) {
-        addByte('H');
-        addFloat(bme280_humidity(), 1);
-      }
+    #endif
+    #if defined(USE_BME280) | defined(USE_DHT)
+      addByte('H');
+      #ifdef USE_BME280
+        if (bme280_cfg.enabled & bme280_cfg.humidity.enabled) {
+          addFloat(bme280_humidity(), 1);
+        }
+      #endif
+      #ifdef USE_DHT
+        addByte(',');
+        if (dht_cfg.enabled & dht_cfg.humidity.enabled & dht_lastresult) {
+          addFloat(dht_humidity(), 1);
+        }
+      #endif
     #endif
     /* Need addString(str(long))
     addByte('C');
@@ -515,7 +537,6 @@ int main() {
   DDRD |= _BV(2); // pinMode(PB2, OUTPUT);
   DDRD |= _BV(3);
   DDRD |= _BV(6);
-  DDRD |= _BV(7);
 
   PORTD |= _BV(2); // digitalWrite(PB2, ON);
 
@@ -523,7 +544,6 @@ int main() {
   sei(); // Enable interrupts
 
   start_timer();
-  delay(1000);
 
   setup();
   serial0_println(F("DBG:Entering main loop."));

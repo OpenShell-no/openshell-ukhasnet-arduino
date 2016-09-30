@@ -30,11 +30,12 @@ void rfm69_reset() {
     // FIXME: make configurable
     DDRB |= _BV(1);
     PORTB |= _BV(1);
-    delay(100);
+    delay(10); // Datasheet specifies minimum 100 microseconds
     PORTB &= ~(_BV(1));
+    delay(20); // Datasheet specifies minimum 10 milliseconds after power-on, and 5 milliseconds after manual reset.
 
     while(rf69_init() != RFM_OK) {
-        delay(100);
+        delay(10);
     }
 }
 

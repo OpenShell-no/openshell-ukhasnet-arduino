@@ -3,9 +3,13 @@
 
 #include <stdint.h>
 
-#include <DHT.h>
 //DHT dht;
 
-/* TODO:30 Implement */
+extern bool dht_lastresult;
+
+bool dht_sample();
+
+double dht_temperature();
+double dht_humidity();
 
 #endif

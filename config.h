@@ -10,7 +10,7 @@
 //#define SERIALDEBUG
 // FIXME: USE_GPS is not optional yet, code needs to be fixed.
 #define USE_GPS
-//#define USE_DHT
+#define USE_DHT
 #define USE_BME280
 
 
@@ -55,6 +55,15 @@ struct bme280_config_t {
 };
 
 extern bme280_config_t bme280_cfg;
+
+struct dht_config_t {
+  bool enabled:1;
+  struct {
+    bool enabled:1;
+  } temperature, humidity;
+};
+extern dht_config_t dht_cfg;
+
 
 // TODO:40 Implement configuration protocol.
 /* EEPROM SETTINGS

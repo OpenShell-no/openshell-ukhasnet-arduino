@@ -41,3 +41,9 @@ bme280_config_t bme280_cfg = {
   {true, 5},
   {true, 5}
 };
+
+dht_config_t dht_cfg = {
+  true,
+  {true},
+  {true},
+};

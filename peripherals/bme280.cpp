@@ -89,10 +89,8 @@ void bme280_sample() {
   bme280_write_register(0xF4, (5<<5) | (5<<2) | 0x01);
 
 
-  PORTD |= _BV(7);
   while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) == 0) {} // Wait for conversion to start
   while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) != 0) {} // Wait for conversion to finish
-  PORTD &= ~(_BV(7));
 
 
   bme280_cs_assert();

@@ -521,7 +521,7 @@ void loop() {
         timer_lastgps_enabled = false;
     }
 
-    if (getTimeSince(timer_sendown) >= (broadcast_interval * 1000)) {
+    if (getTimeSince(timer_sendown) >= ((uint32_t)broadcast_interval * 1000)) {
         timer_sendown = millis();
         sendOwn();
     }

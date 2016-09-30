@@ -54,7 +54,7 @@ $(ASSETS)/main.eep: $(BUILDDIR)/main.elf
 	@mkdir -p "$(@D)"
 	avr-objcopy -j .eeprom -O ihex $< $@
 
-.PHONY: clean upload auto
+.PHONY: clean upload auto fuses
 clean:
 	@-rm -rv $(BUILDDIR) $(ASSETS)
 	@-rmdir /q /s "$(BUILDDIR)" "$(ASSETS)"
@@ -62,4 +62,8 @@ clean:
 upload: $(ASSETS)/main.hex $(ASSETS)/main.eep
 	$(AVRDUDE) -U flash:w:$(ASSETS)/main.hex:i -U eeprom:w:$(ASSETS)/main.eep:i
 
-auto: clean all upload
+# efuse should be 0xfd, but that errors verifying with 0xf5. avrdude config error?
+fuses:
+	$(AVRDUDE) -U lfuse:w:0xe2:m -U hfuse:w:0xd1:m -U efuse:w:0xf5:m
+
+auto: clean all fuses upload

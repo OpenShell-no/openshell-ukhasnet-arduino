@@ -259,15 +259,15 @@ void sendOwn() {
       }
     #endif
     #if defined(USE_BME280) | defined(USE_DHT)
-      addByte('H');
       #ifdef USE_BME280
         if (bme280_cfg.enabled & bme280_cfg.humidity.enabled) {
+          addByte('H');
           addFloat(bme280_humidity(), 1);
         }
       #endif
       #ifdef USE_DHT
-        addByte(',');
         if (dht_cfg.enabled & dht_cfg.humidity.enabled & dht_lastresult) {
+          addByte('H');
           addFloat(dht_humidity(), 1);
         }
       #endif
@@ -279,7 +279,7 @@ void sendOwn() {
     addLong(ukhasnet_repeatcount);
     */
 
-    if (powersave) {
+    if (powersave | (!rfm69_cfg.listen)) {
         addString("Z1");
     } else {
         addString("Z0");
@@ -404,7 +404,7 @@ void setup() {
     dump_rfm69_registers();
 
     serial0_flush();
-    rfm69_set_frequency(rfm_freq);
+    rfm69_set_frequency(rfm69_cfg.frequency);
 #endif
 #endif
     sendOwn();
@@ -483,7 +483,7 @@ void handlePacket() {
 void handleRX() {
   //serial0_println(F("handleRX"));
 #ifdef USE_RFM69
-    if (not powersave) {
+    if ((!powersave) & rfm69_cfg.listen) {
         rf69_receive(databuf, &dataptr, &lastrssi, &packet_received);
         if (packet_received) {
             packet_source = SOURCE_RFM;

@@ -41,7 +41,7 @@ void rfm69_reset() {
 
 void rfm69_set_frequency(float freqMHz) {
     serial0_println(F("DBG:rfm69_set_frequency"));
-    _freq = (long)(((freqMHz + rfm_freq_trim) * 1000000) / 61.04f); // 32MHz / 2^19 = 61.04 Hz
+    _freq = (long)(((freqMHz + rfm69_cfg.frequency_trim) * 1000000) / 61.04f); // 32MHz / 2^19 = 61.04 Hz
     freqbuf[0] = (_freq >> 16) & 0xff;
     freqbuf[1] = (_freq >> 8) & 0xff;
     freqbuf[2] = _freq & 0xff;
@@ -74,14 +74,12 @@ void send_rfm69() {
     PORTD |= _BV(6); // DEBUG
 
     if (powersave) {
-        rfm_txpower = 10;
+        rf69_send(databuf, dataptr, rfm69_cfg.txpower_low);
     } else {
-        rfm_txpower = 20;
+        rf69_send(databuf, dataptr, rfm69_cfg.txpower);
     }
 
-    rf69_send(databuf, dataptr, rfm_txpower);
-
-    if (powersave) {
+    if (powersave | (!rfm69_cfg.listen)) {
         rf69_set_mode(RFM69_MODE_SLEEP);
     } else {
         rf69_set_mode(RFM69_MODE_RX);

@@ -1,19 +1,21 @@
 #include "config.h"
 
-typedef uint8_t byte;
-typedef uint16_t word;
-
-
 /* TODO Config options */
 char node_name[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t node_name_len = strlen(node_name);
 char hops = '9'; // '0'-'9'
 
-uint16_t broadcast_interval = 120;
+uint16_t broadcast_interval = 300;
 
-uint8_t rfm_txpower = 20;
-float rfm_freq = 869.5f;
-float rfm_freq_trim = 0.068f;
+rfm69_config_t rfm69_cfg = {
+  true,   // enabled
+  false,  // listen
+  17,     // txpower
+  10,     // txpower_low
+  869.5f, // frequency
+  0.068f, // frequency_trim
+};
+
 
 float latitude  = NAN;
 float longitude = NAN;
@@ -36,14 +38,14 @@ bool   powersave = true; // Allways assume powersave on boot.
 double powersave_treshold = 3.0; // Treshold voltage in volts.
 
 bme280_config_t bme280_cfg = {
-  true,
-  {true, 5},
-  {true, 5},
-  {true, 5}
+  false,     // enabled
+  {true, 5}, // temperature( enabled, oversampling )
+  {true, 5}, // pressure( enabled, oversampling )
+  {true, 5}, // humidity( enabled, oversampling )
 };
 
 dht_config_t dht_cfg = {
-  true,
-  {true},
-  {true},
+  true,   // enabled
+  {true}, // temperature( enabled )
+  {true}, // humidity( enabled )
 };

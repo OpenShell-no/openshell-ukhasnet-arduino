@@ -20,9 +20,15 @@ extern uint8_t node_name_len;
 extern char hops; // '0'-'9'
 extern uint16_t broadcast_interval;
 
-extern uint8_t rfm_txpower;
-extern float rfm_freq;
-extern float rfm_freq_trim;
+struct rfm69_config_t {
+  bool enabled:1;
+  bool listen:1;
+  uint8_t txpower:5;
+  uint8_t txpower_low:5;
+  float frequency;
+  float frequency_trim;
+};
+extern rfm69_config_t rfm69_cfg;
 
 extern float latitude;
 extern float longitude;

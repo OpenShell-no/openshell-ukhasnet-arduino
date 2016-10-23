@@ -17,13 +17,30 @@ void resetData() {
 }
 
 // Add \0 terminated string, excluding \0
-void addString(char *value) {
+void addString(const char *value) {
     int i = 0;
     while (value[i]) {
         if (dataptr < BUFFERSIZE) {
             databuf[dataptr++] = value[i++];
         }
     }
+}
+
+void addString(const __FlashStringHelper *ifsh) {
+  // from Arduino Print.cpp
+  PGM_P p = reinterpret_cast<PGM_P>(ifsh);
+
+  while (1) {
+    unsigned char c = pgm_read_byte(p++);
+    if (c == 0) {
+      break;
+    }
+    if (dataptr < BUFFERSIZE) {
+      databuf[dataptr++] = c;
+    } else {
+      break;
+    }
+  }
 }
 
 

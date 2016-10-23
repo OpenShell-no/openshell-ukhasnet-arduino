@@ -9,9 +9,9 @@ uint16_t broadcast_interval = 300;
 
 rfm69_config_t rfm69_cfg = {
   true,   // enabled
-  false,  // listen
-  17,     // txpower
-  10,     // txpower_low
+  true,   // listen
+  10,     // txpower
+  1,      // txpower_low
   869.5f, // frequency
   0.068f, // frequency_trim
 };
@@ -38,7 +38,7 @@ bool   powersave = true; // Allways assume powersave on boot.
 double powersave_treshold = 3.0; // Treshold voltage in volts.
 
 bme280_config_t bme280_cfg = {
-  false,     // enabled
+  true,     // enabled
   {true, 5}, // temperature( enabled, oversampling )
   {true, 5}, // pressure( enabled, oversampling )
   {true, 5}, // humidity( enabled, oversampling )

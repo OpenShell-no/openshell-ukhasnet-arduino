@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "uart.h"
 
 #ifndef BUFFER_H
 #define BUFFER_H
@@ -13,7 +14,8 @@ extern uint8_t dataptr;
 
 void resetData();
 
-void addString(char *value);
+void addString(const char *value);
+void addString(const __FlashStringHelper *ifsh);
 void addFloat(double value, uint8_t precission = 2, bool strip=true);
 void addCharArray(char *value, uint8_t len);
 void addLong(unsigned long value);

@@ -9,6 +9,9 @@ const unsigned long MAXULONG = 0xffffffff;
 extern unsigned long now;
 unsigned long getTimeSince(unsigned long ___start);
 
+extern uint8_t reset_reason;
+const char* reset_tostring();
+
 
 /* ------------------------------------------------------------------------- */
 

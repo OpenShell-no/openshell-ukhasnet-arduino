@@ -5,13 +5,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-//#define USE_ONEWIRE
 #define USE_RFM69
 //#define SERIALDEBUG
 // FIXME: USE_GPS is not optional yet, code needs to be fixed.
 #define USE_GPS
 #define USE_DHT
 #define USE_BME280
+#define USE_ONEWIRE
 
 
 /* TODO Config options */

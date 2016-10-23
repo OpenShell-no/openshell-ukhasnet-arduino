@@ -6,7 +6,10 @@
 #include <util/delay.h>
 #include <stdlib.h>
 
+// IO
 #include <avr/io.h>
+// Watchdog
+#include <avr/wdt.h>
 
 #include "utilities/util.h"
 #include "utilities/buffer.h"
@@ -72,6 +75,7 @@ const bool HAS_CPUTEMP = false;
 const bool HAS_CPUVCC = false;
 #endif
 
+uint8_t reset_reason = 0;
 
 /* COMPILETIME SETTINGS
 HAS_UKHASNET
@@ -188,6 +192,37 @@ void sendPositionStatus() {
     bumpSequence();
 }
 
+void sendInitial() {
+  serial0_println(F("DBG:sendInitial"));
+  //
+  debug();
+
+  resetData();
+
+  addByte(hops);
+  addByte(sequence+97);
+
+  addByte('V');
+  addFloat(readVCC());
+
+  if (powersave | (!rfm69_cfg.listen)) {
+      addString("Z1");
+  } else {
+      addString("Z0");
+  }
+
+  addString(F(":reset="));
+  addString(reset_tostring());
+
+  addByte('[');
+  addString(node_name);
+  addByte(']');
+
+  send();
+  delay(300);
+  send();
+  bumpSequence();
+}
 
 void sendOwn() {
     serial0_println(F("DBG:sendOwn"));
@@ -334,7 +369,7 @@ void sendOwn() {
 
 
 void setup() {
-  serial0_println("DBG:setup");
+  serial0_println(F("DBG:setup"));
 
 #ifdef SERIAL0
     serial0_init(115200);
@@ -385,29 +420,32 @@ void setup() {
 
 #endif
 
-#ifdef USE_RFM69
+  #ifdef USE_RFM69
     rfm69_reset();
 
-    for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
     #ifdef SERIAL0
+      for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
         serial0_print(F("Setting 0x"));
         serial0_print(tostring(CONFIG[i][0], HEX));
         serial0_print(F(" = 0x"));
         serial0_println(tostring(CONFIG[i][1], HEX));
+      }
     #endif
-    }
     //rf69_SetLnaMode(RF_TESTLNA_SENSITIVE); // NotImplemented
 
-#ifdef SERIAL0
-    serial0_println(F("Radio started."));
+    #ifdef SERIAL0
+      serial0_println(F("Radio started."));
 
-    dump_rfm69_registers();
+      dump_rfm69_registers();
 
-    serial0_flush();
+      serial0_flush();
+    #endif
     rfm69_set_frequency(rfm69_cfg.frequency);
-#endif
-#endif
-    sendOwn();
+  #endif
+  wdt_reset();
+  sendInitial();
+  wdt_reset();
+  sendOwn();
 }
 
 
@@ -534,20 +572,43 @@ void loop() {
 /* ------------------------------------------------------------------------- */
 
 int main() {
+  wdt_reset();
+  #ifdef WDP3
+    wdt_enable(WDTO_8S);
+  #else
+    wdt_enable(WDTO_2S);
+  #endif
+
+  reset_reason = MCUSR;
+
+  #ifdef SERIAL0
+    serial0_init(115200);
+    serial0_print(F("Reset reasons: "));
+    serial0_println(reset_tostring());
+    #ifdef WDP3
+      serial0_println(F("DBG:Watchdog timeout: 8s"));
+    #else
+      serial0_println(F("DBG:Watchdog timeout: 2s"));
+    #endif
+  #endif
+
   DDRD |= _BV(2); // pinMode(PB2, OUTPUT);
   DDRD |= _BV(3);
-  DDRD |= _BV(6);
 
   PORTD |= _BV(2); // digitalWrite(PB2, ON);
-
 
   sei(); // Enable interrupts
 
   start_timer();
 
+  wdt_reset();
   setup();
+
+  MCUSR &= 0xF0; // Reset reset reason flags.
+
   serial0_println(F("DBG:Entering main loop."));
   while (true) {
+    wdt_reset();
     PORTD ^= _BV(2);
     loop();
   }

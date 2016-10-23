@@ -71,7 +71,6 @@ void rfm69_set_frequency(float freqMHz) {
 
 void send_rfm69() {
     serial0_println(F("DBG:send_rfm69"));
-    PORTD |= _BV(6); // DEBUG
 
     if (powersave) {
         rf69_send(databuf, dataptr, rfm69_cfg.txpower_low);
@@ -84,7 +83,6 @@ void send_rfm69() {
     } else {
         rf69_set_mode(RFM69_MODE_RX);
     }
-    PORTD &= ~(_BV(6));
 }
 
 void dump_rfm69_registers() {

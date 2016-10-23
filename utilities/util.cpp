@@ -16,9 +16,31 @@ unsigned long getTimeSince(unsigned long ___start) {
     return interval;
 }
 
-/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 char _formatbuf[8 * sizeof(uint64_t) + 2] = "";
+
+const char* reset_tostring() {
+  char *str = &_formatbuf[sizeof(_formatbuf) - 1];
+  *str = '\0';
+
+  if (reset_reason & 0x08) { // Watchdog reset
+    *--str = 'w';
+  }
+  if (reset_reason & 0x04) { // Brownout reset
+    *--str = 'b';
+  }
+  if (reset_reason & 0x02) { // External reset
+    *--str = 'e';
+  }
+  if (reset_reason & 0x01) { // Power-on reset
+    *--str = 'p';
+  }
+
+  return str;
+}
+
+
 
 const char* tostring(uint64_t n, base_t base) {
   /* From Arduino Print.cpp */

@@ -43,7 +43,6 @@ const bool HAS_RFM69 = false;
 #endif
 
 
-
 #ifdef USE_ONEWIRE
 const bool HAS_ONEWIRE = true;
 #include "peripherals/onewire.h"
@@ -51,12 +50,14 @@ const bool HAS_ONEWIRE = true;
 const bool HAS_ONEWIRE = false;
 #endif
 
+
 #ifdef USE_DHT
 const bool HAS_DHT = true;
 #include "peripherals/dht.h"
 #else
 const bool HAS_DHT = false;
 #endif
+
 
 #ifdef USE_BME280
 const bool HAS_BME280 = true;
@@ -277,7 +278,8 @@ void sendOwn() {
         }
       #endif
 
-      #ifdef USE_ONEWIRE
+      #if 0
+      //def USE_ONEWIRE
         if (voltage > 2.75) {
           double temp = getDSTemp();
           if (temp != 85) {
@@ -397,7 +399,8 @@ void setup() {
     bme280_init();
 #endif
 
-#ifdef USE_ONEWIRE
+#if 0
+//USE_ONEWIRE
 #ifdef SERIAL0
     serial0_println(F("Scanning 1-wire bus..."));
 #endif

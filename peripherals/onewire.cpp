@@ -1,13 +1,3 @@
-#ifdef UNDEFINED__
+#include "onewire.h"
 
-#include <onewire.h>
-
-double getDSTemp() {
-    dstemp.requestTemperatures();
-
-    double temp = dstemp.getTempC(dsaddr);
-
-    return temp;
-}
-
-#endif
+#include "../libraries/onewire-ukhasnet/OneWire.h"

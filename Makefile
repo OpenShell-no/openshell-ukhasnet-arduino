@@ -5,9 +5,9 @@ SERIALPORT = COM33
 BUILDDIR = ./build
 ASSETS   = ./assets
 
-LIBRARIES = ../libraries/ukhasnet-rfm69
+LIBRARIES = ../libraries/ukhasnet-rfm69 ./libraries/onewire-ukhasnet
 
-SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp)
+SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp) ./libraries/onewire-ukhasnet/OneWire.cpp
 OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o
 
 INCLUDES = $(patsubst %,-I %,$(LIBRARIES))

@@ -59,7 +59,6 @@ struct bme280_config_t {
     uint8_t oversampling:3;
   } temperature, pressure, humidity;
 };
-
 extern bme280_config_t bme280_cfg;
 
 struct dht_config_t {
@@ -69,6 +68,19 @@ struct dht_config_t {
   } temperature, humidity;
 };
 extern dht_config_t dht_cfg;
+
+#define ONEWIRE_CONFIG_MAX_DEVICES 8
+struct onewire_config_t {
+  bool enabled:1;
+  uint8_t pin:6;
+  bool initial:1; // initial search performed
+  struct {
+    bool enabled:1;
+    bool present:1;
+    uint8_t address[8];
+  } ds[ONEWIRE_CONFIG_MAX_DEVICES];
+};
+extern onewire_config_t onewire_config;
 
 
 // TODO:40 Implement configuration protocol.

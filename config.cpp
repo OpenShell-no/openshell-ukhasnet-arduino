@@ -49,3 +49,13 @@ dht_config_t dht_cfg = {
   {true}, // temperature( enabled )
   {true}, // humidity( enabled )
 };
+
+onewire_config_t onewire_config = {
+  true, // enabled
+  6, // pin = PD6
+  false, // initial search performed
+  {
+    {true}, // ds[0] enabled
+    {true}, // ds[1] enabled
+  }
+};

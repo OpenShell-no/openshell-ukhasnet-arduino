@@ -236,7 +236,7 @@ void directWriteHigh(volatile IO_REG_TYPE *base, IO_REG_TYPE pin)
 #define DIRECT_WRITE_HIGH(base, pin)	directWriteHigh(base, pin)
 
 #elif defined(OPENSHELL_ONEWIRE_UKHASNET)
-
+#warning "OpenShell UKHASnet node mode."
 #include "../../utilities/timer.h"
 
 
@@ -246,7 +246,7 @@ void directWriteHigh(volatile IO_REG_TYPE *base, IO_REG_TYPE pin)
 #define interrupts() sei()
 
 // FIXME: port is static - PD
-#define PIN_TO_BASEREG(pin)             ((volatile uint8_t*)PIND)
+#define PIN_TO_BASEREG(pin)             (&PINB)
 #define PIN_TO_BITMASK(pin)             (_BV(pin))
 #define IO_REG_TYPE uint8_t
 #define IO_REG_ASM asm("r30")

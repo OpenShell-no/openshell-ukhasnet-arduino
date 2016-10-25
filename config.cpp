@@ -5,7 +5,7 @@ char node_name[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t node_name_len = strlen(node_name);
 char hops = '9'; // '0'-'9'
 
-uint16_t broadcast_interval = 300;
+uint16_t broadcast_interval = 120;
 
 rfm69_config_t rfm69_cfg = {
   true,   // enabled
@@ -50,9 +50,9 @@ dht_config_t dht_cfg = {
   {true}, // humidity( enabled )
 };
 
-onewire_config_t onewire_config = {
+onewire_config_t onewire_cfg = {
   true, // enabled
-  6, // pin = PD6
+  7, // pin = PB7
   false, // initial search performed
   {
     {true}, // ds[0] enabled

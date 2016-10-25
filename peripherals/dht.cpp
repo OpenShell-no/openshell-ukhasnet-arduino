@@ -25,6 +25,7 @@ uint32_t expectPulse(bool level) {
 bool dht_lastresult;
 uint8_t _dht_data[5];
 bool dht_sample() {
+  serial0_println(F("DBG:dht_sample"));
   _dht_data[0] = _dht_data[1] = _dht_data[2] = _dht_data[3] = _dht_data[4] = 0;
   //getTimeSince();
   PORTD |= _BV(dht_pin); // +

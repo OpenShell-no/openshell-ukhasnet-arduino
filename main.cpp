@@ -248,6 +248,11 @@ void sendOwn() {
 
     }
     //addFloat(getBatteryVoltage());
+    #ifdef USE_ONEWIRE
+      if (onewire_cfg.enabled) {
+        onewire_sample();
+      }
+    #endif
 
     #ifdef USE_BME280
       if (bme280_cfg.enabled) {
@@ -278,13 +283,14 @@ void sendOwn() {
         }
       #endif
 
-      #if 0
-      //def USE_ONEWIRE
-        if (voltage > 2.75) {
-          double temp = getDSTemp();
-          if (temp != 85) {
-            addByte(',');
-            addFloat(getDSTemp(), 3);
+      #ifdef USE_ONEWIRE
+        if (onewire_cfg.enabled) {
+          onewire_sample_wait();
+          for (uint8_t i=0; i < ONEWIRE_CONFIG_MAX_DEVICES; i++) {
+            if (onewire_cfg.ds[i].enabled & onewire_cfg.ds[i].present) {
+              addByte(',');
+              addFloat(onewire_temperature(onewire_cfg.ds[i].address), 3);
+            }
           }
         }
       #endif
@@ -395,6 +401,9 @@ void setup() {
     serial0_flush();
 #endif
 
+#ifdef USE_ONEWIRE
+    onewire_init();
+#endif
 #ifdef USE_BME280
     bme280_init();
 #endif

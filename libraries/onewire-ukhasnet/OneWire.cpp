@@ -127,9 +127,9 @@ OneWire::OneWire(uint8_t pin)
 	//pinMode(pin, INPUT);
 	bitmask = PIN_TO_BITMASK(pin);
 	baseReg = PIN_TO_BASEREG(pin);
-    
+
     DIRECT_MODE_INPUT(baseReg, bitmask);
-    
+
 #if ONEWIRE_SEARCH
 	reset_search();
 #endif
@@ -262,7 +262,7 @@ uint8_t OneWire::read() {
     uint8_t r = 0;
 
     for (bitMask = 0x01; bitMask; bitMask <<= 1) {
-	if ( OneWire::read_bit()) r |= bitMask;
+        if ( OneWire::read_bit()) r |= bitMask;
     }
     return r;
 }
@@ -522,7 +522,7 @@ uint8_t OneWire::crc8(const uint8_t *addr, uint8_t len)
 uint8_t OneWire::crc8(const uint8_t *addr, uint8_t len)
 {
 	uint8_t crc = 0;
-	
+
 	while (len--) {
 		uint8_t inbyte = *addr++;
 		for (uint8_t i = 8; i; i--) {

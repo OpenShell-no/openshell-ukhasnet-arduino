@@ -69,7 +69,8 @@ struct dht_config_t {
 };
 extern dht_config_t dht_cfg;
 
-#define ONEWIRE_CONFIG_MAX_DEVICES 8
+const uint32_t ONEWIRE_SAMPLE_TIME = 750;
+const uint8_t ONEWIRE_CONFIG_MAX_DEVICES = 8;
 struct onewire_config_t {
   bool enabled:1;
   uint8_t pin:6;
@@ -80,7 +81,7 @@ struct onewire_config_t {
     uint8_t address[8];
   } ds[ONEWIRE_CONFIG_MAX_DEVICES];
 };
-extern onewire_config_t onewire_config;
+extern onewire_config_t onewire_cfg;
 
 
 // TODO:40 Implement configuration protocol.

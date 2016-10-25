@@ -78,6 +78,7 @@ double _pressure=0;
 double _humidity=0;
 
 void bme280_sample() {
+  serial0_println(F("DBG:bme280_sample"));
   //0xF7 to 0xFE (temperature, pressure and humidity)
 
   // 4 filter coeff

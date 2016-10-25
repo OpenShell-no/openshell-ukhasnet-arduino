@@ -57,6 +57,7 @@ struct bme280_config_t {
   struct {
     bool enabled:1;
     uint8_t oversampling:3;
+    uint8_t decimals:2;
   } temperature, pressure, humidity;
 };
 extern bme280_config_t bme280_cfg;
@@ -65,6 +66,7 @@ struct dht_config_t {
   bool enabled:1;
   struct {
     bool enabled:1;
+    uint8_t decimals:2;
   } temperature, humidity;
 };
 extern dht_config_t dht_cfg;
@@ -75,6 +77,7 @@ struct onewire_config_t {
   bool enabled:1;
   uint8_t pin:6;
   bool initial:1; // initial search performed
+  uint8_t decimals:3; // decimal precission, 0-7
   struct {
     bool enabled:1;
     bool present:1;

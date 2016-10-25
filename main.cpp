@@ -273,13 +273,13 @@ void sendOwn() {
       #ifdef USE_BME280
         if (bme280_cfg.enabled & bme280_cfg.temperature.enabled) {
           addByte(',');
-          addFloat(bme280_temperature(), 2);
+          addFloat(bme280_temperature(), bme280_cfg.temperature.decimals);
         }
       #endif
       #ifdef USE_DHT
         if (dht_cfg.enabled & dht_cfg.temperature.enabled & dht_lastresult) {
           addByte(',');
-          addFloat(dht_temperature(), 2);
+          addFloat(dht_temperature(), dht_cfg.temperature.decimals);
         }
       #endif
 
@@ -289,7 +289,7 @@ void sendOwn() {
           for (uint8_t i=0; i < ONEWIRE_CONFIG_MAX_DEVICES; i++) {
             if (onewire_cfg.ds[i].enabled & onewire_cfg.ds[i].present) {
               addByte(',');
-              addFloat(onewire_temperature(onewire_cfg.ds[i].address), 3);
+              addFloat(onewire_temperature(onewire_cfg.ds[i].address), onewire_cfg.decimals);
             }
           }
         }
@@ -298,20 +298,20 @@ void sendOwn() {
     #ifdef USE_BME280
       if (bme280_cfg.enabled & bme280_cfg.pressure.enabled) {
         addByte('P');
-        addFloat(bme280_pressure(), 1);
+        addFloat(bme280_pressure(), bme280_cfg.pressure.decimals);
       }
     #endif
     #if defined(USE_BME280) | defined(USE_DHT)
       #ifdef USE_BME280
         if (bme280_cfg.enabled & bme280_cfg.humidity.enabled) {
           addByte('H');
-          addFloat(bme280_humidity(), 1);
+          addFloat(bme280_humidity(), bme280_cfg.humidity.decimals);
         }
       #endif
       #ifdef USE_DHT
         if (dht_cfg.enabled & dht_cfg.humidity.enabled & dht_lastresult) {
           addByte('H');
-          addFloat(dht_humidity(), 1);
+          addFloat(dht_humidity(), dht_cfg.humidity.decimals);
         }
       #endif
     #endif

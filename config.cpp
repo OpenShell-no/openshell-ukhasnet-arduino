@@ -39,21 +39,22 @@ double powersave_treshold = 3.0; // Treshold voltage in volts.
 
 bme280_config_t bme280_cfg = {
   true,     // enabled
-  {true, 5}, // temperature( enabled, oversampling )
-  {true, 5}, // pressure( enabled, oversampling )
-  {true, 5}, // humidity( enabled, oversampling )
+  {true, 5, 2}, // temperature( enabled, oversampling, decimals )
+  {true, 5, 0}, // pressure( enabled, oversampling, decimals )
+  {true, 5, 0}, // humidity( enabled, oversampling, decimals )
 };
 
 dht_config_t dht_cfg = {
   true,   // enabled
-  {true}, // temperature( enabled )
-  {true}, // humidity( enabled )
+  {true, 1}, // temperature( enabled, decimals )
+  {true, 0}, // humidity( enabled, decimals )
 };
 
 onewire_config_t onewire_cfg = {
   true, // enabled
   7, // pin = PB7
   false, // initial search performed
+  0, // decimal precission
   {
     {true}, // ds[0] enabled
     {true}, // ds[1] enabled

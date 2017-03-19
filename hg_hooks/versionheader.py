@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf8 -*-
-# Copyright (c) 2016 Odd Stråbø <oddstr13@openshell.no>
+# Copyright (c) 2016 Odd Strabo <oddstr13@openshell.no>
 # License: MIT - https://opensource.org/licenses/MIT
 
 VERSION_HEADER_FILE = "firmware_version.h"

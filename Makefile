@@ -5,12 +5,12 @@ SERIALPORT = COM33
 BUILDDIR = ./build
 ASSETS   = ./assets
 
-LIBRARIES = ../libraries/ukhasnet-rfm69 ./libraries/onewire-ukhasnet
+LIBRARIES = ../libraries/ukhasnet-rfm69 ./libraries/onewire-ukhasnet $(HOME)/atmel/packs/atmega/latest/include/
 
 SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp) ./libraries/onewire-ukhasnet/OneWire.cpp
 OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o
 
-INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
+INCLUDES = -B $(HOME)/atmel/packs/atmega/latest/gcc/dev/$(DEVICE)/ $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
 COMPILE = avr-g++ -Wall -Wextra -w -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=$(DEVICE) $(INCLUDES)
 #AVRDUDE_CONF := avrdude.conf

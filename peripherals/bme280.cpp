@@ -100,7 +100,13 @@ void bme280_sample() {
           return;
       }
   } // Wait for conversion to start
-  while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) != 0) {} // Wait for conversion to finish
+  while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) != 0) {
+      if (getTimeSince(__timeoutstart) >= 800) {
+          serial0_println(F("ERR:disabling BME280"));
+          bme280_cfg.enabled = false;
+          return;
+      }
+    } // Wait for conversion to finish
 
 
   bme280_cs_assert();

@@ -558,7 +558,7 @@ void handleRX() {
 unsigned long timer_sendown = 0; //millis();
 unsigned long timer_checkvoltage = 0;
 void loop() {
-    if (getTimeSince(timer_checkvoltage >= 100)) {
+    if (getTimeSince(timer_checkvoltage) >= 100) {
         timer_checkvoltage = millis();
         readVCC();
     }

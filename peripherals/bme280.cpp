@@ -5,6 +5,7 @@
 #include "../utilities/uart.h"
 #include "../utilities/util.h"
 #include "../utilities/timer.h"
+#include "../config.h"
 
 union {
   struct {
@@ -77,6 +78,8 @@ double _temperature=0;
 double _pressure=0;
 double _humidity=0;
 
+unsigned long __timeoutstart;
+
 void bme280_sample() {
   serial0_println(F("DBG:bme280_sample"));
   //0xF7 to 0xFE (temperature, pressure and humidity)
@@ -89,8 +92,14 @@ void bme280_sample() {
   // ctrl_meas(osrs_t(5), osrs_p(5), mode(1))
   bme280_write_register(0xF4, (5<<5) | (5<<2) | 0x01);
 
-
-  while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) == 0) {} // Wait for conversion to start
+  __timeoutstart = millis();
+  while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) == 0) {
+      if (getTimeSince(__timeoutstart) >= 800) {
+          serial0_println(F("ERR:disabling BME280"));
+          bme280_cfg.enabled = false;
+          return;
+      }
+  } // Wait for conversion to start
   while ((bme280_read_register(0xF3) & (_BV(3) | _BV(1))) != 0) {} // Wait for conversion to finish
 
 

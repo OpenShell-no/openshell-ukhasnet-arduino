@@ -22,7 +22,7 @@ all: firmware_version.h $(ASSETS)/main.hex $(ASSETS)/main.eep
 
 # "::" means allways remake file.
 firmware_version.h::
-	python ./hg_hooks/versionheader.py
+	python2.7 ./hg_hooks/versionheader.py
 
 # TODO: do the same for .c files
 $(BUILDDIR)/%.o: %.cpp firmware_version.h

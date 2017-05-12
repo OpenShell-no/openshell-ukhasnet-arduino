@@ -38,14 +38,14 @@ bool   powersave = true; // Allways assume powersave on boot.
 double powersave_treshold = 3.0; // Treshold voltage in volts.
 
 bme280_config_t bme280_cfg = {
-  true,     // enabled
+  false,     // enabled
   {true, 5, 2}, // temperature( enabled, oversampling, decimals )
   {true, 5, 0}, // pressure( enabled, oversampling, decimals )
   {true, 5, 0}, // humidity( enabled, oversampling, decimals )
 };
 
 dht_config_t dht_cfg = {
-  true,   // enabled
+  false,   // enabled
   {true, 1}, // temperature( enabled, decimals )
   {true, 0}, // humidity( enabled, decimals )
 };

@@ -11,6 +11,7 @@ TEMPLATE = """
 #pragma message "Firmware version is {version} at commit {commit} in branch {branch}"
 const char firmware_version[] = "{version}";
 const char firmware_commit[] = "{commit}";
+const bool firmware_commit_dirty = {dirty};
 const char firmware_branch[] = "{branch}";
 const char firmware_date[] = "{date}";
 #endif
@@ -37,10 +38,13 @@ def generate(ui, repo, **kwargs):
             variables['commit'] = "{commit}+".format(commit=ctx.hex())
             if not version:
                 version = "0.0.{revision}+".format(revision=ctx.rev())
+            variables['dirty'] = 'true'
         else:
             variables['commit'] = ctx.hex()
             if not version:
                 version = "0.0.{revision}".format(revision=ctx.rev())
+
+            variables['dirty'] = 'false'
 
         d = ctx.date()
         variables['date'] = (datetime.datetime.fromtimestamp(int(d[0])) + datetime.timedelta(seconds=d[1])).isoformat() + 'Z'

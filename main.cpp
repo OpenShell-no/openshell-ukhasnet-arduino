@@ -234,6 +234,35 @@ void sendOwn() {
     addByte(hops);
     addByte(sequence+97);
 
+    switch (sequence) {
+        case 1: // Location
+            if (latitude != NAN or longitude != NAN or altitude != NAN) {
+                addByte('L');
+                if (latitude != NAN) {
+                    addFloat(latitude, 5);
+                }
+                addByte(',');
+                if (longitude != NAN) {
+                    addFloat(longitude, 5);
+                }
+                if (altitude != NAN) {
+                    addByte(',');
+                    addFloat(altitude, 0);
+                }
+            }
+            break;
+        case 2: // Version
+            addByte(':');
+            addString(F("version="));
+            addCharArray(firmware_commit, 7);
+            if (firmware_commit_dirty) {
+                addByte('+');
+            }
+            break;
+        /*case 3: // Comment
+            addString(":no sleep");
+            break;*/
+        default:
     addByte('V');
     addFloat(readVCC());
     if (vbat_enabled or vpanel_enabled) {
@@ -350,16 +379,7 @@ void sendOwn() {
             addFloat(altitude, 0);
             break;
     }
-
-    switch (sequence) {
-        case 1: // Location
-            break;
-        case 2: // Mode
-            break;
-        /*case 3: // Comment
-            addString(":no sleep");
-            break;*/
-    }
+    } // end packet sequence switch
 
     addByte('[');
     addString(node_name);

@@ -77,7 +77,7 @@ void addFloat(double value, uint8_t precission, bool strip) {
     addString(_floatbuf);
 }
 
-void addCharArray(char *value, uint8_t len) {
+void addCharArray(const char *value, uint8_t len) {
   /* Add char array to the output data buffer (databuf) */
   for (uint8_t i=0; i<len; i++) {
     if (dataptr < BUFFERSIZE) {

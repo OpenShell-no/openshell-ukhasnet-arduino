@@ -17,7 +17,7 @@ void resetData();
 void addString(const char *value);
 void addString(const __FlashStringHelper *ifsh);
 void addFloat(double value, uint8_t precission = 2, bool strip=true);
-void addCharArray(char *value, uint8_t len);
+void addCharArray(const char *value, uint8_t len);
 void addLong(unsigned long value);
 void addWord(uint16_t value);
 void addByte(uint8_t value);

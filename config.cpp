@@ -1,7 +1,12 @@
 #include "config.h"
-
+#define _STR(x) #x
+#define STR(x) _STR(x)
 /* TODO Config options */
-char node_name[9] = "OSTEST2"; // null-terminated string, max 8 bytes, A-z0-9
+#ifdef NODENAME
+char node_name[9] = STR(NODENAME);
+#else
+char node_name[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
+#endif
 uint8_t node_name_len = strlen(node_name);
 char hops = '9'; // '0'-'9'
 

@@ -1,20 +1,30 @@
-DEVICE  = atmega328pb
-CLOCK	  = 8000000
-SERIALPORT = COM33
+DEVICEFAMILY ?= atmega
+DEVICE       ?= atmega328pb
+CLOCK        ?= 8000000
+SERIALPORT   ?= COM33
+BAUDRATE     ?= 19200
+
+NODENAME ?= OSTEST
 
 BUILDDIR = ./build
 ASSETS   = ./assets
 
-LIBRARIES = ../libraries/ukhasnet-rfm69 ./libraries/onewire-ukhasnet $(HOME)/atmel/packs/atmega/latest/include/
+PACKDIR ?= $(HOME)/tools/atmel/packs
+
+LIBRARIES = ../libraries/ukhasnet-rfm69 ./libraries/onewire-ukhasnet $(PACKDIR)/$(DEVICEFAMILY)/latest/include/
+
+DEVICEPACK = $(PACKDIR)/$(DEVICEFAMILY)/latest/gcc/dev/$(DEVICE)/
 
 SOURCES = $(wildcard *.cpp) $(wildcard */*.cpp) ./libraries/onewire-ukhasnet/OneWire.cpp
 OBJECTS = $(addprefix $(BUILDDIR)/,$(SOURCES:.cpp=.o)) ../libraries/ukhasnet-rfm69/ukhasnet-rfm69.o
 
-INCLUDES = -B $(HOME)/atmel/packs/atmega/latest/gcc/dev/$(DEVICE)/ $(patsubst %,-I %,$(LIBRARIES))
+VARIABLES = -DF_CPU=$(CLOCK) -D'AVR=' -DNODENAME=$(NODENAME)
+
+INCLUDES = $(patsubst %,-I %,$(LIBRARIES))
 # Compiler flags. Optimise for code size. Allow C99 standards.
-COMPILE = avr-g++ -Wall -Wextra -w -pedantic -Os -gdwarf-2 -std=c++1y -DF_CPU=$(CLOCK) -D'AVR=' -mmcu=$(DEVICE) $(INCLUDES)
-#AVRDUDE_CONF := avrdude.conf
-AVRDUDE = avrdude -C $(AVRDUDE_CONF) -c arduino -P $(SERIALPORT) -p $(DEVICE) -b 19200
+COMPILE = avr-g++ -Wall -Wextra -w -pedantic -Os -gdwarf-2 -std=c++1y $(VARIABLES) -mmcu=$(DEVICE) -B $(DEVICEPACK) $(INCLUDES)
+AVRDUDE_CONF ?= /etc/avrdude.conf
+AVRDUDE = avrdude -C $(AVRDUDE_CONF) -c arduino -P $(SERIALPORT) -p $(DEVICE) -b $(BAUDRATE)
 
 default: clean all
 

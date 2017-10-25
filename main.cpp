@@ -15,6 +15,7 @@
 #include "utilities/buffer.h"
 #include "utilities/timer.h"
 #include "utilities/uart.h"
+#include "utilities/lowpower.h"
 
 #if defined (AVR)
   #include "boards/avr.h"
@@ -577,72 +578,91 @@ void handleRX() {
 
 unsigned long timer_sendown = 0; //millis();
 unsigned long timer_checkvoltage = 0;
+uint16_t interval_left = 0;
 void loop() {
+    serial0_flush();
+    if (interval_left) {
+        interval_left = WDTsleep(interval_left);
+    } else {
+        interval_left = WDTsleep(broadcast_interval);
+    }
+
+    wdt_reset();
+    #ifdef WDP3
+        wdt_enable(WDTO_8S);
+    #else
+        wdt_enable(WDTO_2S);
+    #endif
+
+    serial0_print("Woken up with ");
+    serial0_print(tostring(interval_left));
+    serial0_println("s left.");
+/*
     if (getTimeSince(timer_checkvoltage) >= 100) {
         timer_checkvoltage = millis();
         readVCC();
     }
-
+*/
     handleRX();
 
+/*
     if (timer_lastgps_enabled and getTimeSince(timer_lastgps) >= 15000) {
         gps_lock = GPS_LOCK_UNKNOWN;
         sendPositionStatus();
         timer_lastgps_enabled = false;
     }
-
-    if (getTimeSince(timer_sendown) >= ((uint32_t)broadcast_interval * 1000)) {
-        timer_sendown = millis();
+*/
+    if (!interval_left) {
+        wdt_reset();
+        delay(20); // ADC was probably off. Wait a little for stabilization.
         sendOwn();
     }
 
+    /*
     if (do_sendgpsstatus) {
       sendPositionStatus();
     }
+    */
 }
 
 /* ------------------------------------------------------------------------- */
 
 int main() {
-  wdt_reset();
-  #ifdef WDP3
-    wdt_enable(WDTO_8S);
-  #else
-    wdt_enable(WDTO_2S);
-  #endif
+    wdt_disable();
 
-  reset_reason = MCUSR;
+    reset_reason = MCUSR;
 
-  #ifdef SERIAL0
-    serial0_init(115200);
-    serial0_print(F("Reset reasons: "));
-    serial0_println(reset_tostring());
-    #ifdef WDP3
-      serial0_println(F("DBG:Watchdog timeout: 8s"));
-    #else
-      serial0_println(F("DBG:Watchdog timeout: 2s"));
+    #ifdef SERIAL0
+        serial0_init(115200);
+        serial0_print(F("Reset reasons: "));
+        serial0_println(reset_tostring());
+        #ifdef WDP3
+        serial0_println(F("DBG:Watchdog timeout: 8s"));
+        #else
+        serial0_println(F("DBG:Watchdog timeout: 2s"));
+        #endif
     #endif
-  #endif
 
-  DDRD |= _BV(2); // pinMode(PB2, OUTPUT);
-  DDRD |= _BV(3);
+    // Heartbeat on PD2, OUTPUT
+    DDRD |= _BV(2); // pinMode(PB2, OUTPUT);
+    DDRD |= _BV(3);
 
-  PORTD |= _BV(2); // digitalWrite(PB2, ON);
+    PORTD |= _BV(2); // digitalWrite(PB2, ON);
 
-  sei(); // Enable interrupts
+    sei(); // Enable interrupts
 
-  start_timer();
+    start_timer();
 
-  wdt_reset();
-  setup();
-
-  MCUSR &= 0xF0; // Reset reset reason flags.
-
-  serial0_println(F("DBG:Entering main loop."));
-  while (true) {
     wdt_reset();
-    PORTD ^= _BV(2);
-    loop();
-  }
-  return 0;
+    setup();
+
+    MCUSR &= 0xF0; // Reset reset reason flags.
+
+    serial0_println(F("DBG:Entering main loop."));
+    while (true) {
+        wdt_reset();
+        PORTD ^= _BV(2); // toggle heartbeat LED
+        loop();
+    }
+    return 0;
 }

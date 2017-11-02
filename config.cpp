@@ -29,12 +29,12 @@ float altitude  = NAN;
 double vsense_offset = 0.74; // Seems like it depends on current usage. Jumps to 0.76V
 double vsense_mult = 15.227;
 
-bool vbat_enabled = false;
+bool vbat_enabled = true;
 int    vbat_pin    = 0; // Analog pin A0
 double vbat_offset = 0.023;
 double vbat_mult   = 11.0;
 
-bool vpanel_enabled = false;
+bool vpanel_enabled = true;
 int    vpanel_pin    = 1; // Analog pin A1
 double vpanel_offset = 0.330;
 double vpanel_mult   = 11.1;
@@ -59,7 +59,7 @@ onewire_config_t onewire_cfg = {
   true, // enabled
   7, // pin = PB7
   false, // initial search performed
-  0, // decimal precission
+  3, // decimal precission
   {
     {true}, // ds[0] enabled
     {true}, // ds[1] enabled

@@ -56,7 +56,7 @@ def generate(ui, repo, **kwargs):
         variables['version'] = version
 
         output = TEMPLATE.format(**variables)
-        if os.path.exists(VERSION_HEADER_FILE) and open(VERSION_HEADER_FILE, "rb").read() != output or not os.path.exists(VERSION_HEADER_FILE):
+        if (not os.path.exists(VERSION_HEADER_FILE)) or open(VERSION_HEADER_FILE, "rb").read() != output:
             print(variables)
             with open(VERSION_HEADER_FILE, "wb") as fh:
                 fh.write(output)

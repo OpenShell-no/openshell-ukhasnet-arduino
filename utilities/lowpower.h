@@ -1,0 +1,1 @@
+uint16_t WDTsleep(const uint16_t seconds);

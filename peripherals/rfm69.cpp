@@ -1,3 +1,5 @@
+#include <avr/interrupt.h>
+
 #include "rfm69.h"
 #include "../utilities/timer.h"
 #include "../utilities/uart.h"
@@ -11,6 +13,7 @@
 // TODO: fixme
 
 int16_t lastrssi = 0;
+volatile uint8_t rfm_interrupt_flags = 0;
 
 #ifdef ESP8266
   int rfm69_reset_pin = 15;
@@ -37,6 +40,7 @@ void rfm69_reset() {
     while(rf69_init() != RFM_OK) {
         delay(10);
     }
+    rfm69_enable_interrupts();
 }
 
 void rfm69_set_frequency(float freqMHz) {
@@ -52,6 +56,7 @@ void rfm69_set_frequency(float freqMHz) {
     serial0_print(F("MHz = 0x"));
     serial0_println(tostring(_freq, HEX));
     serial0_flush();
+#endif
 
     _rf69_burst_write(RFM69_REG_07_FRF_MSB, freqbuf, 3);
 
@@ -59,6 +64,7 @@ void rfm69_set_frequency(float freqMHz) {
     _rf69_burst_read(RFM69_REG_07_FRF_MSB, freqbuf, 3);
     _freq = (freqbuf[0] << 16) | (freqbuf[1] << 8) | freqbuf[2];
 
+#ifdef SERIAL0
     serial0_print(F("Frequency was set to: "));
     serial0_print(tostring((float)_freq / 1000000 * 61.04f));
     serial0_print(F("MHz = 0x"));
@@ -67,7 +73,21 @@ void rfm69_set_frequency(float freqMHz) {
 #endif
 }
 
+void rfm69_enable_interrupts() {
+    _rf69_write(RFM69_REG_25_DIO_MAPPING1, RF_DIOMAPPING1_DIO0_01 | RF_DIOMAPPING1_DIO1_01);
 
+    rfm_interrupt_flags = 0;
+    PCICR |= _BV(PCIE2);
+    PCMSK2 |= _BV(PCINT20) | _BV(PCINT21);
+}
+
+volatile uint8_t _oldport = 0;
+volatile uint8_t _portnow = 0;
+ISR(PCINT2_vect) {
+    _portnow = (PIND & 0b00110000); // PD4=DIO0, PD5=DIO1
+    rfm_interrupt_flags |= (_oldport ^ _portnow);
+    _oldport = _portnow;
+}
 
 void send_rfm69() {
     serial0_println(F("DBG:send_rfm69"));

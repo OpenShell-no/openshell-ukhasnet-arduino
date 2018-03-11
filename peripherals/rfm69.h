@@ -19,4 +19,8 @@ void rfm69_set_frequency(float freqMHz);
 void send_rfm69();
 void dump_rfm69_registers();
 
+void rfm69_enable_interrupts();
+
+extern volatile uint8_t rfm_interrupt_flags;
+
 #endif

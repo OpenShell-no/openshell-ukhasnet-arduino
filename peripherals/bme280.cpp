@@ -45,6 +45,9 @@ struct {
 } bme280_calibration;
 
 void bme280_init() {
+  if (!bme280_cfg.enabled) {
+    return;
+  }
   bme280_write_register(0xE0, 0xB6); // Reset
   serial0_print(F("BMP280 ID: "));
   serial0_println(tostring(bme280_read_register(0xD0), HEX));

@@ -653,6 +653,12 @@ int main() {
 
     start_timer();
 
+    #ifdef WDP3
+        wdt_enable(WDTO_8S);
+    #else
+        wdt_enable(WDTO_2S);
+    #endif
+
     wdt_reset();
     setup();
 

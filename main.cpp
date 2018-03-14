@@ -298,7 +298,7 @@ void sendOwn() {
     if (HAS_CPUTEMP | HAS_BME280) { // and *_enabled | HAS_DHT | HAS_ONEWIRE
       addByte('T');
       #ifdef USE_CPUTEMP
-        addFloat(getChipTemp());
+        addFloat(getChipTemp(), 0);
       #endif
       #ifdef USE_BME280
         if (bme280_cfg.enabled & bme280_cfg.temperature.enabled) {

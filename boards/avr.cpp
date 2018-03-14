@@ -41,7 +41,7 @@ double getChipTemp() {
   // Reading register "ADCW" takes care of how to read ADCL and ADCH.
   wADC = ADCW;
   // The offset of 324.31 could be wrong. It is just an indication.
-  return (wADC - 244.31d) / 1.22d;
+  return (wADC - 235.0d) / 1.22d;
 }
 
 double getVCCVoltage() {

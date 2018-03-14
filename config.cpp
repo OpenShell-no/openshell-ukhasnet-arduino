@@ -10,7 +10,7 @@ char node_name[9] = "OSTEST"; // null-terminated string, max 8 bytes, A-z0-9
 uint8_t node_name_len = strlen(node_name);
 char hops = '9'; // '0'-'9'
 
-uint16_t broadcast_interval = 120;
+uint16_t broadcast_interval = 60;
 
 rfm69_config_t rfm69_cfg = {
   true,   // enabled
@@ -43,10 +43,10 @@ bool   powersave = true; // Allways assume powersave on boot.
 double powersave_treshold = 3.0; // Treshold voltage in volts.
 
 bme280_config_t bme280_cfg = {
-  false,     // enabled
-  {true, 5, 2}, // temperature( enabled, oversampling, decimals )
+  true,     // enabled
+  {true, 5, 3}, // temperature( enabled, oversampling, decimals )
   {true, 5, 0}, // pressure( enabled, oversampling, decimals )
-  {true, 5, 0}, // humidity( enabled, oversampling, decimals )
+  {true, 5, 2}, // humidity( enabled, oversampling, decimals )
 };
 
 dht_config_t dht_cfg = {
@@ -59,7 +59,7 @@ onewire_config_t onewire_cfg = {
   true, // enabled
   7, // pin = PB7
   false, // initial search performed
-  0, // decimal precission
+  3, // decimal precission
   {
     {true}, // ds[0] enabled
     {true}, // ds[1] enabled
